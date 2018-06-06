@@ -35,7 +35,7 @@ class TextDataset(ONMTDatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter, src_memory_iter, tgt_memory_iter,
+    def __init__(self, fields, src_examples_iter, tgt_examples_iter, src_memory_iter, tgt_memory_iter, src_m_iter, tgt_m_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=True, use_filter_pred=True):
@@ -52,8 +52,8 @@ class TextDataset(ONMTDatasetBase):
         # at minimum the src tokens and their indices and potentially also
         # the src and tgt features and alignment information.
         if tgt_examples_iter is not None:
-            examples_iter = (self._join_dicts(src, tgt, src_memory, tgt_memory) for src, tgt, src_memory, tgt_memory in
-                             zip(src_examples_iter, tgt_examples_iter, src_memory_iter, tgt_memory_iter))
+            examples_iter = (self._join_dicts(src, tgt, src_memory, tgt_memory, src_m, tgt_m) for src, tgt, src_memory, tgt_memory, src_m, tgt_m in
+                             zip(src_examples_iter, tgt_examples_iter, src_memory_iter, tgt_memory_iter, src_m_iter, tgt_m_iter))
         else:
             examples_iter = src_examples_iter
 
@@ -200,7 +200,13 @@ class TextDataset(ONMTDatasetBase):
         """
         fields = {}
 
-        fields["memory"] = torchtext.data.Field(
+        fields["src_memory"] = torchtext.data.Field(
+            pad_token=PAD_WORD)
+        fields["tgt_memory"] = torchtext.data.Field(
+            pad_token=PAD_WORD)
+        fields["src_m"] = torchtext.data.Field(
+            pad_token=PAD_WORD)
+        fields["tgt_m"] = torchtext.data.Field(
             pad_token=PAD_WORD)
 
         fields["src"] = torchtext.data.Field(
