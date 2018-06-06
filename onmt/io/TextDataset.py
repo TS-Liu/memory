@@ -415,36 +415,36 @@ class ShardedTextCorpusIterator(object):
 
         return example_dict
 
-    class ShardedMemoryIterator(object):
-        def __init__(self, corpus_path,  shard_size, side, assoc_iter=None):
-            try:
+class ShardedMemoryIterator(object):
+    def __init__(self, corpus_path,  shard_size, side, assoc_iter=None):
+        try:
                 # The codecs module seems to have bugs with seek()/tell(),
                 # so we use io.open().
-                self.corpus = io.open(corpus_path, "r", encoding="utf-8")
-            except IOError:
-                sys.stderr.write("Failed to open corpus file: %s" % corpus_path)
-                sys.exit(1)
+            self.corpus = io.open(corpus_path, "r", encoding="utf-8")
+        except IOError:
+            sys.stderr.write("Failed to open corpus file: %s" % corpus_path)
+            sys.exit(1)
 
-            self.shard_size = shard_size
-            self.assoc_iter = assoc_iter
-            self.side = side
-            self.last_pos = 0
-            self.line_index = -1
-            self.eof = False
+        self.shard_size = shard_size
+        self.assoc_iter = assoc_iter
+        self.side = side
+        self.last_pos = 0
+        self.line_index = -1
+        self.eof = False
 
-        def __iter__(self):
+    def __iter__(self):
 
-            while self.line_index < self.assoc_iter.line_index:
-                line = self.corpus.readline()
-                if line == '':
-                    raise AssertionError(
+        while self.line_index < self.assoc_iter.line_index:
+            line = self.corpus.readline()
+            if line == '':
+                raise AssertionError(
                         "Two corpuses must have same number of lines!")
 
-                self.line_index += 1
+            self.line_index += 1
 
-            if self.assoc_iter.eof:
-                self.eof = True
-                self.corpus.close()
+        if self.assoc_iter.eof:
+            self.eof = True
+            self.corpus.close()
 
-        def hit_end(self):
-            return self.eof
+    def hit_end(self):
+        return self.eof
