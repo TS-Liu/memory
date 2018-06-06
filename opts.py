@@ -135,7 +135,7 @@ def preprocess_opts(parser):
                        help="Path to the training source data")
     group.add_argument('-train_trg_memory', required=True,
                        help="Path to the training target data")
-    group.add_argument('train_trg_m', required=True,
+    group.add_argument('-train_trg_m', required=True,
                        help="Path to the training source data")
     group.add_argument('-train_src_m', required=True,
                        help="Path to the training target data")
