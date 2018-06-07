@@ -201,8 +201,10 @@ class TextDataset(ONMTDatasetBase):
         fields = {}
 
         fields["src_memory"] = torchtext.data.Field(
+            init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
         fields["tgt_memory"] = torchtext.data.Field(
+            init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
         fields["src_m"] = torchtext.data.Field(
             pad_token=PAD_WORD)
