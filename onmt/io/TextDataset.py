@@ -416,7 +416,7 @@ class ShardedTextCorpusIterator(object):
         return example_dict
 
 class ShardedMemoryIterator(object):
-    def __init__(self, corpus_path,  shard_size, side, assoc_iter=None):
+    def __init__(self, corpus_path, side, shard_size, assoc_iter=None):
         try:
                 # The codecs module seems to have bugs with seek()/tell(),
                 # so we use io.open().
@@ -433,7 +433,7 @@ class ShardedMemoryIterator(object):
         self.eof = False
 
     def __iter__(self):
-
+        iteration_index = -1
         while self.line_index < self.assoc_iter.line_index:
             line = self.corpus.readline()
             if line == '':
@@ -441,6 +441,8 @@ class ShardedMemoryIterator(object):
                         "Two corpuses must have same number of lines!")
 
             self.line_index += 1
+            iteration_index += 1
+            yield self._example_dict_iter(line, iteration_index)
 
         if self.assoc_iter.eof:
             self.eof = True
@@ -448,3 +450,9 @@ class ShardedMemoryIterator(object):
 
     def hit_end(self):
         return self.eof
+
+    def _example_dict_iter(self, line, index):
+
+        example_dict = {self.side: line.split(), "indices": index}
+
+        return example_dict
