@@ -127,7 +127,7 @@ class MemoryLayer(EncoderBase):
 
     def __init__(self, hidden_size, dropout,
                  num_heads=8, filter_size=2048):
-        super(DecoderLayer, self).__init__()
+        super(MemoryLayer, self).__init__()
         self.num_heads = num_heads
         self.ma_l1 = attention.MultiheadAttention(hidden_size,
                                                   hidden_size,
