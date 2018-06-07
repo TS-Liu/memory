@@ -221,8 +221,13 @@ class Trainer(object):
 
             tgt = onmt.io.make_features(batch, 'tgt')
 
+            src_memory = onmt.io.make_features(batch, 'src_memory')
+            tgt_memory = onmt.io.make_features(batch, 'tgt_memory')
+            src_m = onmt.io.make_features(batch, 'src_m')
+            tgt_m = onmt.io.make_features(batch, 'tgt_m')
+
             # F-prop through the model.
-            outputs, attns, _ = self.model(src, tgt, src_lengths)
+            outputs, attns, _ = self.model(src, tgt, src_memory, tgt_memory, src_m, tgt_m, src_lengths)
 
             # Compute loss.
             batch_stats = self.valid_loss.monolithic_compute_loss(
