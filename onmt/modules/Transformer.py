@@ -224,6 +224,8 @@ class TransformerDecoder(nn.Module):
         self.layer_stack = nn.ModuleList([
             DecoderLayer(hidden_size, dropout) for _ in range(num_layers)])
 
+        self.memory = MemoryLayer(hidden_size, dropout)
+
         # TransformerDecoder has its own attention mechanism.
         # Set up a separated copy attention layer, if needed.
         self._copy = False
@@ -233,7 +235,7 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = layers.LayerNorm(hidden_size)
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None):
+    def forward(self, tgt, src_memory, tgt_memory, src_m, tgt_m, memory_bank, state, memory_lengths=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
@@ -291,6 +293,11 @@ class TransformerDecoder(nn.Module):
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
+
+        #output, attn, all_input \
+        #    = self.memory(output, src_memory_bank, decoder_bias,
+        #                 encoder_decoder_bias, previous_input=prev_layer_input,
+        #                 src_memory, tgt_memory, src_m, tgt_m,)
 
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
