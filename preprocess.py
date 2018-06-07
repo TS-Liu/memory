@@ -88,17 +88,15 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, src_memory, trg_me
                 "tgt", opt.max_shard_size,
                 assoc_iter=src_iter)
     src_memory_iter = onmt.io.ShardedTextCorpusIterator(
-        src_memory, "src_memory", opt.max_shard_size,
-        assoc_iter=src_iter)
+        src_memory, "src_memory", opt.max_shard_size,)
     tgt_memory_iter = onmt.io.ShardedTextCorpusIterator(
         trg_memory,"tgt_memory", opt.max_shard_size,
-        assoc_iter=src_iter)
+        assoc_iter=src_memory_iter)
     src_m_iter = onmt.io.ShardedTextCorpusIterator(
-        src_m, "src_memory", opt.max_shard_size,
-        assoc_iter=src_iter)
+        src_m, "src_m", opt.max_shard_size,)
     tgt_m_iter = onmt.io.ShardedTextCorpusIterator(
-        trg_m, "tgt_memory", opt.max_shard_size,
-        assoc_iter=src_iter)
+        trg_m, "tgt_m", opt.max_shard_size,
+        assoc_iter=src_m_iter)
 
     index = 0
     while not src_iter.hit_end():
