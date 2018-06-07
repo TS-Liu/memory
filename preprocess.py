@@ -87,16 +87,16 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, src_memory, trg_me
                 tgt_corpus, opt.tgt_seq_length_trunc,
                 "tgt", opt.max_shard_size,
                 assoc_iter=src_iter)
-    src_memory_iter = onmt.io.ShardedMemoryIterator(
+    src_memory_iter = onmt.io.ShardedTextCorpusIterator(
         src_memory, "src_memory", opt.max_shard_size,
         assoc_iter=src_iter)
-    tgt_memory_iter = onmt.io.ShardedMemoryIterator(
+    tgt_memory_iter = onmt.io.ShardedTextCorpusIterator(
         trg_memory,"tgt_memory", opt.max_shard_size,
         assoc_iter=src_iter)
-    src_m_iter = onmt.io.ShardedMemoryIterator(
+    src_m_iter = onmt.io.ShardedTextCorpusIterator(
         src_m, "src_memory", opt.max_shard_size,
         assoc_iter=src_iter)
-    tgt_m_iter = onmt.io.ShardedMemoryIterator(
+    tgt_m_iter = onmt.io.ShardedTextCorpusIterator(
         trg_m, "tgt_memory", opt.max_shard_size,
         assoc_iter=src_iter)
 
