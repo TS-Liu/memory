@@ -178,3 +178,69 @@ class MultiheadAttention(nn.Module):
                     query_len, key_len)[:, 0, :, :].contiguous()
         x = self.combie_heads(x, num_heads)
         return self.output_transform(x), top_attn
+
+class Memory_MultiheadAttention(MultiheadAttention):
+    def split_heads(self, x, num_heads):
+        """
+        Args:
+            x: a Tensor with shape [batch, length, channels]
+            num_heads: a int number, channels of x should be devided by num_heads
+        Returns:
+            ans: a Tensor with shape [batch * num_heads, length, channels // num_heads]
+        """
+        batch, length, window, examples, channels = x.size()
+        assert channels % num_heads == 0, (
+               "channels of the input should be devided by num_heads")
+        new_dim = channels // num_heads
+        ans = x.view(batch, length, window, examples, num_heads, new_dim).transpose(2, 4)
+        return ans
+    def combie_heads(self, x, num_heads):
+        """
+        A reverse process of split_heads function
+        Args:
+            x: a Tensor with shape [batch * num_heads, length, last_dim]
+            num_heads: a int number
+        Returns:
+            ans: a Tensor with shape [batch, length, last_dim * num_heads]
+        """
+        batch, length, _, examples, window, new_dim = x.size()
+        ans = x.transpose(2, 4).contiguous().view(batch,
+                                    length, window, examples, num_heads * new_dim)
+        return ans
+    def forward(self,
+                query_antecedent,
+                key_antecedent,
+                value_antecedent,
+                num_heads,
+                bias):
+        """
+        Args:
+            query_antecedent: a Tensor with shape [batch, length_q, channels]
+            memroy_antecedent: a Tensor with shape [batch, length_kv, channels]
+            bias: bias Tensor with shape [batch, 1, length_kv]
+                  or [batch, length_q, length_kv]
+            num_heads: a int number
+        Returns:
+            the result of the attention transformation, shape is [batch, length_q, channels]
+        """
+        batch_size, len, query_len, w_len, _ = query_antecedent.size()
+        _, _, key_len, _, _ = key_antecedent.size()
+        q = self.input_query_transform(query_antecedent)
+        k = self.input_key_transform(key_antecedent)
+        v = self.input_value_transform(value_antecedent)
+        q = self.split_heads(q, num_heads)
+        k = self.split_heads(k, num_heads)
+        v = self.split_heads(v, num_heads)
+        key_depth_per_head = self.total_key_depth // num_heads
+        q = q / math.sqrt(key_depth_per_head)
+        logits = torch.matmul(q, k.transpose(4, 5))
+        if bias is not None:
+            bias = bias.unsqueeze(1).expand_as(logits)
+            logits += bias
+        attn = self.attention_softmax(logits)
+        drop_attn = self.attention_dropout(attn)
+        x = torch.matmul(drop_attn, v)
+        top_attn = attn.view(batch_size, len, num_heads,
+                    query_len, key_len)[:, 0, :, :].contiguous()
+        x = self.combie_heads(x, num_heads)
+        return self.output_transform(x), top_attn
