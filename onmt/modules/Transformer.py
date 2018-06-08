@@ -175,7 +175,7 @@ class MemoryLayer(EncoderBase):
 
         # encoder decoder multihead attention
         y, attn = self.ma_l3(self.ma_l3_prenorm(output), t_x, outputt_m,
-                             self.num_heads)
+                             self.num_heads, None)
         x = self.ma_l3_postdropout(y) + self.ma_l3_prenorm(output)
         # ffn layer
         y = self.ffn(self.ffn_prenorm(x))
