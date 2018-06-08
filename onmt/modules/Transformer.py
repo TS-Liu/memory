@@ -263,6 +263,8 @@ class TransformerDecoder(nn.Module):
         src = state.src
         tgt_memory = tgt_memory[1:-1]
         src_memory = src_memory[1:-1]
+        tgt_m = tgt_m[1:-1]
+        src_m = src_m[1:-1]
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         #src_m_words = src_m[:, :, 0].transpose(0, 1)
@@ -286,6 +288,7 @@ class TransformerDecoder(nn.Module):
 
         # Run the forward pass of the TransformerDecoder.
         emb = self.embeddings(tgt)
+        tgt_len, tgt_batch, tgt_embedding_dim = emb.size()
         embt_m = self.embeddings(tgt_m)
         embt_memory = self.embeddings(tgt_memory)
         embs_m = src_embeddings(src_m)
@@ -295,10 +298,10 @@ class TransformerDecoder(nn.Module):
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         output = emb.transpose(0, 1).contiguous()
-        outputt_m = embt_m.transpose(0, 1).view(tgt_batch, tgt_len-1, 1, 1, -1).contiguous()
-        outputt_memory = embt_memory.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, -1).contiguous()
-        outputs_m = embs_m.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, -1).contiguous()
-        outputs_memory = embs_memory.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, -1).contiguous()
+        outputt_m = embt_m.transpose(0, 1).view(tgt_batch, tgt_len-1, 1, 1, tgt_embedding_dim).contiguous()
+        outputt_memory = embt_memory.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, tgt_embedding_dim).contiguous()
+        outputs_m = embs_m.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, tgt_embedding_dim).contiguous()
+        outputs_memory = embs_memory.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, tgt_embedding_dim).contiguous()
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         padding_idx = self.embeddings.word_padding_idx
