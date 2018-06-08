@@ -269,8 +269,8 @@ class TransformerDecoder(nn.Module):
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         #src_m_words = src_m[:, :, 0].transpose(0, 1)
         #tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
-        src_memory_words = src_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len-1, 3, 1)
-        tgt_memory_words = tgt_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len-1, 3, 1)
+        src_memory_words = src_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len-1, 3, 1).transpose(2, 3)
+        tgt_memory_words = tgt_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len-1, 3, 1).transpose(2, 3)
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
         aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
@@ -309,8 +309,8 @@ class TransformerDecoder(nn.Module):
 
         src_memory_pad_mask = Variable(src_memory_words.data.eq(padding_idx).float())
         tgt_memory_pad_mask = Variable(tgt_memory_words.data.eq(padding_idx).float())
-        esc_bias = torch.unsqueeze(src_memory_pad_mask * -1e9, 1)
-        etc_bias = torch.unsqueeze(tgt_memory_pad_mask * -1e9, 1)
+        esc_bias = torch.unsqueeze(src_memory_pad_mask * -1e9, 3)
+        etc_bias = torch.unsqueeze(tgt_memory_pad_mask * -1e9, 3)
 
         tgt_pad_mask = Variable(tgt_words.data.eq(padding_idx).float().unsqueeze(1))
         tgt_pad_mask = tgt_pad_mask.repeat(1, tgt_len, 1)

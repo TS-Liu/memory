@@ -235,7 +235,7 @@ class Memory_MultiheadAttention(MultiheadAttention):
         q = q / math.sqrt(key_depth_per_head)
         logits = torch.matmul(q, k.transpose(4, 5))
         if bias is not None:
-            bias = bias.unsqueeze(1).expand_as(logits)
+            bias = bias.unsqueeze(2).expand_as(logits)
             logits += bias
         attn = self.attention_softmax(logits)
         drop_attn = self.attention_dropout(attn)
