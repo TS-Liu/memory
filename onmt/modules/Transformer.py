@@ -300,7 +300,7 @@ class TransformerDecoder(nn.Module):
         output = emb.transpose(0, 1).contiguous()
         outputt_m = embt_m.transpose(0, 1).view(tgt_batch, tgt_len-1, 1, 1, tgt_embedding_dim).contiguous()
         outputt_memory = embt_memory.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, tgt_embedding_dim).contiguous()
-        outputs_m = embs_m.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, tgt_embedding_dim).contiguous()
+        outputs_m = embs_m.transpose(0, 1).view(tgt_batch, tgt_len-1, 1, 1, tgt_embedding_dim).contiguous()
         outputs_memory = embs_memory.transpose(0, 1).view(tgt_batch, tgt_len-1, 3, 1, tgt_embedding_dim).contiguous()
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
