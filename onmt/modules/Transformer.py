@@ -159,25 +159,27 @@ class MemoryLayer(EncoderBase):
         # self multihead attention
         s_norm_x = self.ma_l1_prenorm(outputs_m)
         #s_all_inputs = s_norm_x
-        if previous_input is not None:
-            all_inputs = torch.cat((previous_input, s_norm_x), dim=1)
-            self_attention_bias = None
+        #if previous_input is not None:
+            #all_inputs = torch.cat((previous_input, s_norm_x), dim=1)
+            #self_attention_bias = None
         s_y, s_ = self.ma_l1(s_norm_x, outputs_memory, outputs_memory, self.num_heads, esc_bias)
         s_x = self.ma_l1_postdropout(s_y) + outputs_m
 
         t_norm_x = self.ma_l1_prenorm(outputt_m)
         #t_all_inputs = t_norm_x
-        if previous_input is not None:
-            all_inputs = torch.cat((previous_input, t_norm_x), dim=1)
-            self_attention_bias = None
+        #if previous_input is not None:
+            #all_inputs = torch.cat((previous_input, t_norm_x), dim=1)
+            #self_attention_bias = None
         t_y, t_ = self.ma_l2(t_norm_x, outputt_memory, outputt_memory, self.num_heads, etc_bias)
         t_x = self.ma_l1_postdropout(t_y) + outputt_m
 
         # encoder decoder multihead attention
         y, attn = self.ma_l3(self.ma_l3_prenorm(output), t_x, outputt_m,
                              self.num_heads, None)
-        x = self.ma_l3_postdropout(y) + self.ma_l3_prenorm(output)
+        x = self.ma_l3_postdropout(y) + self.ma_l3_prenorm(output).unsqueeze(2).unsqueeze(2)
         # ffn layer
+        b, l, d = output.size()
+        x = x.sum(2).sum(3).view(b, l, d)
         y = self.ffn(self.ffn_prenorm(x))
         ans = self.ffn_postdropout(y) + x
         return ans, attn
