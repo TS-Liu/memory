@@ -223,6 +223,8 @@ class Memory_MultiheadAttention(MultiheadAttention):
         Returns:
             the result of the attention transformation, shape is [batch, length_q, channels]
         """
+        if query_antecedent.dim()==3 :
+            query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2)
         batch_size, len, query_len, e_len, h = query_antecedent.size()
         batch_size, len, key_len, e_len, h = key_antecedent.size()
         q = self.input_query_transform(query_antecedent)
