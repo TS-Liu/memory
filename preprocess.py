@@ -129,13 +129,17 @@ def build_save_dataset(corpus_type, fields, opt):
     if corpus_type == 'train':
         src_corpus = opt.train_src
         tgt_corpus = opt.train_tgt
+        src_memory = opt.train_src_memory
+        trg_memory = opt.train_trg_memory
+        src_m = opt.train_src_m
+        trg_m = opt.train_trg_m
     else:
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
-    src_memory = opt.train_src_memory
-    trg_memory = opt.train_trg_memory
-    src_m = opt.train_src_m
-    trg_m = opt.train_trg_m
+        src_memory = opt.valid_src_memory
+        trg_memory = opt.valid_trg_memory
+        src_m = opt.valid_src_m
+        trg_m = opt.valid_trg_m
 
     # Currently we only do preprocess sharding for corpus: data_type=='text'.
     if opt.data_type == 'text':
