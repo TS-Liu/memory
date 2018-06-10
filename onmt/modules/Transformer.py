@@ -158,7 +158,7 @@ class MemoryLayer(EncoderBase):
                          etc_bias, previous_input=None):
         # self multihead attention
         s_norm_x = self.ma_l1_prenorm(outputs_m)
-        s_all_inputs = s_norm_x
+        #s_all_inputs = s_norm_x
         if previous_input is not None:
             all_inputs = torch.cat((previous_input, s_norm_x), dim=1)
             self_attention_bias = None
@@ -166,7 +166,7 @@ class MemoryLayer(EncoderBase):
         s_x = self.ma_l1_postdropout(s_y) + outputs_m
 
         t_norm_x = self.ma_l1_prenorm(outputt_m)
-        t_all_inputs = t_norm_x
+        #t_all_inputs = t_norm_x
         if previous_input is not None:
             all_inputs = torch.cat((previous_input, t_norm_x), dim=1)
             self_attention_bias = None
@@ -180,7 +180,7 @@ class MemoryLayer(EncoderBase):
         # ffn layer
         y = self.ffn(self.ffn_prenorm(x))
         ans = self.ffn_postdropout(y) + x
-        return ans, attn, all_inputs
+        return ans, attn
 
 class TransformerEncoder(EncoderBase):
     """
@@ -329,7 +329,7 @@ class TransformerDecoder(nn.Module):
                                encoder_decoder_bias, previous_input=prev_layer_input)
             saved_inputs.append(all_input)
 
-        output, attn, all_input \
+        output, attn \
             = self.memory(output, outputs_m, outputt_m, outputs_memory, outputt_memory, esc_bias,
                          etc_bias, previous_input=prev_layer_input)
 
