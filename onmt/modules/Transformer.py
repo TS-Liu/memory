@@ -300,10 +300,10 @@ class TransformerDecoder(nn.Module):
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         output = emb.transpose(0, 1).contiguous()
-        outputt_m = embt_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 1, tgt_embedding_dim)
-        outputt_memory = embt_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
-        outputs_m = embs_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 1, tgt_embedding_dim)
-        outputs_memory = embs_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
+        outputt_m = embt_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3, tgt_embedding_dim)
+        outputt_memory = embt_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3, tgt_embedding_dim)
+        outputs_m = embs_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3, tgt_embedding_dim)
+        outputs_memory = embs_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3, tgt_embedding_dim)
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         padding_idx = self.embeddings.word_padding_idx
