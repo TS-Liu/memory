@@ -179,7 +179,7 @@ class MemoryLayer(EncoderBase):
         x = self.ma_l3_postdropout(y) + self.ma_l3_prenorm(output).unsqueeze(2).unsqueeze(2)
         # ffn layer
         b, l, d = output.size()
-        x = x.sum(2).sum(2).view(b, l, d)
+        x = x.sum(3).view(b, l, d)
         y = self.ffn(self.ffn_prenorm(x))
         ans = self.ffn_postdropout(y) + x
         return ans, attn
