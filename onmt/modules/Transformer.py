@@ -263,10 +263,10 @@ class TransformerDecoder(nn.Module):
         aeq(tgt_batch, memory_batch)
 
         src = state.src
-        tgt_memory = tgt_memory[:-1]
-        src_memory = src_memory[:-1]
-        tgt_m = tgt_m[:-1]
-        src_m = src_m[:-1]
+        tgt_memory = tgt_memory[1:-1]
+        src_memory = src_memory[1:-1]
+        tgt_m = tgt_m[1:-1]
+        src_m = src_m[1:-1]
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         #src_m_words = src_m[:, :, 0].transpose(0, 1)
