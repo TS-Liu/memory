@@ -179,7 +179,7 @@ class MemoryLayer(EncoderBase):
         x = self.ma_l3_postdropout(y) + self.ma_l3_prenorm(output).unsqueeze(2).unsqueeze(2)
         # ffn layer
         b, l, d = output.size()
-        x = x.sum(3).view(b, l, d)
+        x = x.mean(3).view(b, l, d)
         y = self.ffn(self.ffn_prenorm(x))
         ans = self.ffn_postdropout(y) + x
         return ans, attn
@@ -263,16 +263,16 @@ class TransformerDecoder(nn.Module):
         aeq(tgt_batch, memory_batch)
 
         src = state.src
-        tgt_memory = tgt_memory[1:-1]
-        src_memory = src_memory[1:-1]
-        tgt_m = tgt_m[1:-1]
-        src_m = src_m[1:-1]
+        tgt_memory = tgt_memory[:-1]
+        src_memory = src_memory[:-1]
+        tgt_m = tgt_m[:-1]
+        src_m = src_m[:-1]
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         #src_m_words = src_m[:, :, 0].transpose(0, 1)
         #tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
-        src_memory_words = src_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1).transpose(2, 3)
-        tgt_memory_words = tgt_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1).transpose(2, 3)
+        src_memory_words = src_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3).transpose(2, 3)
+        tgt_memory_words = tgt_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3).transpose(2, 3)
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
         aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
@@ -301,9 +301,9 @@ class TransformerDecoder(nn.Module):
 
         output = emb.transpose(0, 1).contiguous()
         outputt_m = embt_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3, tgt_embedding_dim)
-        outputt_memory = embt_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3, tgt_embedding_dim)
+        outputt_memory = embt_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3, tgt_embedding_dim)
         outputs_m = embs_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3, tgt_embedding_dim)
-        outputs_memory = embs_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1, 3, tgt_embedding_dim)
+        outputs_memory = embs_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3, tgt_embedding_dim)
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         padding_idx = self.embeddings.word_padding_idx
