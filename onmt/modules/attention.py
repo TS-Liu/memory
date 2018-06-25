@@ -243,6 +243,6 @@ class Memory_MultiheadAttention(MultiheadAttention):
         drop_attn = self.attention_dropout(attn)
         x = torch.matmul(drop_attn, v)
         top_attn = attn.view(batch_size, len, num_heads,
-                    query_len, key_len)[:, :, 0, :, :].contiguous()
+                    query_len, key_len, e_len)[:, :, 0, :, :].contiguous()
         x = self.combie_heads(x, num_heads)
         return self.output_transform(x), top_attn
