@@ -56,7 +56,7 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-    def translate_batch(self, batch, data, memory):
+    def translate_batch(self, batch, data):
         """
         Translate a batch of sentences.
 
