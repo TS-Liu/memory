@@ -6,7 +6,7 @@ from itertools import count
 import torch
 import torchtext.data
 import torchtext.vocab
-from .batch import Batch
+from torchtext.data.batch import Batch
 
 from onmt.io.DatasetBase import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.io.TextDataset import TextDataset
