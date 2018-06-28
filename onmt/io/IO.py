@@ -361,9 +361,7 @@ class Iterator(torchtext.data.Iterator):
                         minibatch.reverse()
                     else:
                         minibatch.sort(key=self.sort_key, reverse=True)
-                yield Batch(minibatch, self.dataset, self.device,
-                            self.train)
-                yield minibatch
+                yield Batch(minibatch, self.dataset, self.device,self.train), minibatch
             if not self.repeat:
                 return
 
