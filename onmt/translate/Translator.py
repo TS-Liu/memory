@@ -149,7 +149,7 @@ class Translator(object):
             # in the decoder
             vocab = self.fields["tgt"].vocab
             tokens=[]
-            for tok in inp[0].numpy():
+            for tok in inp[0].data.numpy():
                     tokens.append(vocab.itos[tok])
 
             inp = inp.unsqueeze(2)
