@@ -56,7 +56,7 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-    def translate_batch(self, batch, data):
+    def translate_batch(self, batch, word_batch, data):
         """
         Translate a batch of sentences.
 
@@ -109,6 +109,7 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src = onmt.io.make_features(batch, 'src', data_type)
         src_lengths = None
+        src_word = word_batch.src
         if data_type == 'text':
             _, src_lengths = batch.src
 

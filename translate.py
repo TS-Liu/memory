@@ -112,8 +112,8 @@ def main():
     pred_score_total, pred_words_total = 0, 0
     gold_score_total, gold_words_total = 0, 0
 
-    for batch in data_iter:
-        batch_data = translator.translate_batch(batch, data)
+    for batch, word_batch in zip(data_iter, word_iter):
+        batch_data = translator.translate_batch(batch, word_batch, data)
         translations = builder.from_batch(batch_data)
 
         for trans in translations:
