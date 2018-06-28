@@ -80,7 +80,7 @@ def main():
 
     # Sort batch by decreasing lengths of sentence required by pytorch.
     # sort=False means "Use dataset's sortkey instead of iterator's".
-    data_iter = onmt.io.OrderedIterator(
+    data_iter, word_iter = onmt.io.TestOrderedIterator(
         dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
         sort_within_batch=True, shuffle=False)

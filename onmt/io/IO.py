@@ -6,6 +6,7 @@ from itertools import count
 import torch
 import torchtext.data
 import torchtext.vocab
+from .batch import Batch
 
 from onmt.io.DatasetBase import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.io.TextDataset import TextDataset
@@ -341,6 +342,47 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
 
     return src_examples_iter, num_src_feats
 
+
+class Iterator(torchtext.data.Iterator):
+    def __iter__(self):
+        while True:
+            self.init_epoch()
+            for idx, minibatch in enumerate(self.batches):
+                # fast-forward if loaded from state
+                if self._iterations_this_epoch > idx:
+                    continue
+                self.iterations += 1
+                self._iterations_this_epoch += 1
+                if self.sort_within_batch:
+                    # NOTE: `rnn.pack_padded_sequence` requires that a minibatch
+                    # be sorted by decreasing order, which requires reversing
+                    # relative to typical sort keys
+                    if self.sort:
+                        minibatch.reverse()
+                    else:
+                        minibatch.sort(key=self.sort_key, reverse=True)
+                yield Batch(minibatch, self.dataset, self.device,
+                            self.train), minibatch
+            if not self.repeat:
+                return
+
+
+class TestOrderedIterator(Iterator):
+    def create_batches(self):
+        if self.train:
+            def pool(data, random_shuffler):
+                for p in torchtext.data.batch(data, self.batch_size * 100):
+                    p_batch = torchtext.data.batch(
+                        sorted(p, key=self.sort_key),
+                        self.batch_size, self.batch_size_fn)
+                    for b in random_shuffler(list(p_batch)):
+                        yield b
+            self.batches = pool(self.data(), self.random_shuffler)
+        else:
+            self.batches = []
+            for b in torchtext.data.batch(self.data(), self.batch_size,
+                                          self.batch_size_fn):
+                self.batches.append(sorted(b, key=self.sort_key))
 
 class OrderedIterator(torchtext.data.Iterator):
     def create_batches(self):
