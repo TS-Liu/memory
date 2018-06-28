@@ -109,7 +109,7 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src = onmt.io.make_features(batch, 'src', data_type)
         src_lengths = None
-        src_word = word_batch.src
+        src_word = word_batch
         if data_type == 'text':
             _, src_lengths = batch.src
 
