@@ -147,7 +147,14 @@ class Translator(object):
 
             # Temporary kludge solution to handle changed dim expectation
             # in the decoder
+            vocab = self.fields["tgt"].vocab
+            tokens=[]
+            for tok in inp[0]:
+                if tok < len(vocab):
+                    tokens.append(vocab.itos[tok])
+
             inp = inp.unsqueeze(2)
+
 
             # Run one step.
             dec_out, dec_states, attn = self.model.decoder(
