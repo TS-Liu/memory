@@ -150,7 +150,6 @@ class Translator(object):
             vocab = self.fields["tgt"].vocab
             tokens=[]
             for tok in inp[0]:
-                if tok < len(vocab):
                     tokens.append(vocab.itos[tok])
 
             inp = inp.unsqueeze(2)
