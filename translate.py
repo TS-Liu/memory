@@ -103,10 +103,10 @@ def main():
 
     N = 1
     M = 1
-    src_file = open(opt.src, 'r')
-    trg_file = open(opt.tgt, 'r')
+    src_file = open(opt.train_src, 'r')
+    trg_file = open(opt.train_tgt, 'r')
 
-    align_file = open(opt.align, 'r')
+    align_file = open(opt.train_align, 'r')
 
     src_lines = src_file.readlines()
     trg_lines = trg_file.readlines()
