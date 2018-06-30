@@ -5,6 +5,8 @@ import os
 import argparse
 import math
 import codecs
+from collections import OrderedDict
+
 import torch
 
 from itertools import count
@@ -15,6 +17,7 @@ import onmt
 import onmt.ModelConstructor
 import onmt.modules
 import opts
+from multiprocessing import Pool
 
 parser = argparse.ArgumentParser(
     description='translate.py',
@@ -51,7 +54,42 @@ def _report_rouge():
         shell=True).decode("utf-8")
     print(res.strip())
 
-
+def func(i,N,M,src_lines, trg_lines, align_lines):
+    print("start"+str(i))
+    align = OrderedDict()
+    for lines, linet, linea in zip(src_lines, trg_lines, align_lines):
+        words_src = lines.strip().split()
+        words_trg = linet.strip().split()
+        a_s_t = linea.strip().split()
+        for a in a_s_t :
+            a = a.split('-')
+            t_num = int(a[1])
+            s_num = int(a[0])
+            t = words_trg[t_num]
+            s = words_src[s_num]
+            t_n_gram=['<s>']*(N)
+            s_context=['']*(M*2+1)
+            if t_num < N :
+                t_n_gram[N-t_num:] = words_trg[0:t_num]
+            else :
+                t_n_gram = words_trg[t_num-N:t_num]
+            if s_num < M and s_num+M+1 <= len(words_src):
+                s_context[M*2-s_num-M:] = words_src[0:s_num+M+1]
+                s_context[:M*2-s_num-M] = ['<s>']*(M*2-s_num-M)
+            elif s_num-M >= 0 and s_num > len(words_src)-M-1 :
+                s_context[0:len(words_src)-s_num+M] = words_src[s_num-M:len(words_src)]
+                s_context[len(words_src)-s_num+M:] = ['</s>']*(M*2+1-len(words_src)+s_num-M)
+            elif s_num-M >= 0 and s_num+M+1 <= len(words_src) :
+                s_context = words_src[s_num-M:s_num+M+1]
+            else :
+                s_context[M*2-s_num-M:len(words_src)-s_num+M] = words_src
+                s_context[len(words_src)-s_num+M:] = ['</s>']*(M*2+1-len(words_src)+s_num-M)
+                s_context[:M*2-s_num-M] = ['<s>']*(M*2-s_num-M)
+            if str([t,s,t_n_gram,s_context]) not in align.keys() :
+                align[str([t,s,t_n_gram,s_context])] = 0
+            align[str([t,s,t_n_gram,s_context])]+=1
+    print("end"+str(i))
+    return align
 def main():
     dummy_parser = argparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
@@ -60,6 +98,68 @@ def main():
     opt.cuda = opt.gpu > -1
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
+
+
+
+    N = 1
+    M = 1
+    src_file = open(opt.src, 'r')
+    trg_file = open(opt.tgt, 'r')
+
+    align_file = open(opt.align, 'r')
+
+    src_lines = src_file.readlines()
+    trg_lines = trg_file.readlines()
+    align_lines = align_file.readlines()
+
+    align = OrderedDict()
+    pool = Pool()
+    result = []
+    for i in range(10000):
+        result.append(pool.apply_async(func, args=(
+        i, N, M, src_lines[125 * i:125 * (i + 1)], trg_lines[125 * i:125 * (i + 1)],
+        align_lines[125 * i:125 * (i + 1)])))
+    pool.close()
+    pool.join()
+
+    for i in result:
+        ddict = i.get()
+        for k, v in ddict.items():
+            if k not in align:
+                align[k] = v
+            else:
+                align[k] = v + align[k]
+
+    align_sorted = sorted(align.items(), lambda x, y: cmp(x[1], y[1]), reverse=True)
+    print(len(align_sorted))
+
+    k = 0
+    lists = OrderedDict()
+    for align in align_sorted:
+        pairs = eval(align[0])
+        y = pairs[0]
+        ngram = pairs[2]
+        context = pairs[3]
+        if align[1] > 0:
+            if str(ngram) not in lists:
+                value = OrderedDict()
+                xy = OrderedDict()
+                xy[y] = align[1]
+                value[str(context)] = xy
+                lists[str(ngram)] = value
+            else:
+                if str(context) not in lists[str(ngram)]:
+                    xy = OrderedDict()
+                    xy[y] = align[1]
+                    lists[str(ngram)][str(context)] = xy
+                else:
+                    if y not in lists[str(ngram)][str(context)]:
+                        lists[str(ngram)][str(context)][y] = align[1]
+                    else:
+                        lists[str(ngram)][str(context)][y] = align[1] + lists[str(ngram)][str(context)][y]
+            k += 1
+    print(k)
+
 
     # Load the model.
     fields, model, model_opt = \
@@ -112,8 +212,11 @@ def main():
     pred_score_total, pred_words_total = 0, 0
     gold_score_total, gold_words_total = 0, 0
 
+
+
+
     for batch, word_batch in data_iter:
-        batch_data = translator.translate_batch(batch, word_batch, data)
+        batch_data = translator.translate_batch(batch, word_batch, data, lists)
         translations = builder.from_batch(batch_data)
 
         for trans in translations:

@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch
 from torch.autograd import Variable
 
@@ -56,7 +58,7 @@ class Translator(object):
                 "scores": [],
                 "log_probs": []}
 
-    def translate_batch(self, batch, word_batch, data):
+    def translate_batch(self, batch, word_batch, data, lists):
         """
         Translate a batch of sentences.
 
@@ -109,7 +111,39 @@ class Translator(object):
         # (1) Run the encoder on the src.
         src = onmt.io.make_features(batch, 'src', data_type)
         src_lengths = None
-        src_word = word_batch
+        src_lines = word_batch
+
+        N = 1
+        M = 1
+
+        ss_contexts=[]
+        for src_line in src_lines :
+            src_words = list(src_line.src)
+            s_num = 0
+            s_contexts = []
+            for words in src_words:
+
+                s_context = [''] * (M * 2 + 1)
+                if s_num < M and s_num + M + 1 <= len(src_words):
+                    s_context[M * 2 - s_num - M:] = src_words[0:s_num + M + 1]
+                    s_context[:M * 2 - s_num - M] = ['<s>'] * (M * 2 - s_num - M)
+                elif s_num - M >= 0 and s_num > len(src_words) - M - 1:
+                    s_context[0:len(src_words) - s_num + M] = src_words[s_num - M:len(src_words)]
+                    s_context[len(src_words) - s_num + M:] = ['</s>'] * (M * 2 + 1 - len(src_words) + s_num - M)
+                elif s_num - M >= 0 and s_num + M + 1 <= len(src_words):
+                    s_context = src_words[s_num - M:s_num + M + 1]
+                else:
+                    s_context[M * 2 - s_num - M:len(src_words) - s_num + M] = src_words
+                    s_context[len(src_words) - s_num + M:] = ['</s>'] * (M * 2 + 1 - len(src_words) + s_num - M)
+                    s_context[:M * 2 - s_num - M] = ['<s>'] * (M * 2 - s_num - M)
+
+                s_contexts.append(s_context)
+                s_num += 1
+            ss_contexts.append(s_contexts)
+
+
+
+
         if data_type == 'text':
             _, src_lengths = batch.src
 
@@ -128,6 +162,7 @@ class Translator(object):
         memory_bank = rvar(memory_bank.data)
         memory_lengths = src_lengths.repeat(beam_size)
         dec_states.repeat_beam_size_times(beam_size)
+
 
         # (3) run the decoder to generate sentences, using beam search.
         for i in range(self.max_length):
@@ -148,16 +183,71 @@ class Translator(object):
             # Temporary kludge solution to handle changed dim expectation
             # in the decoder
             vocab = self.fields["tgt"].vocab
-            tokens=[]
+            beam_tokens=[]
             for tok in list(inp[0].data.cpu().numpy()):
-                    tokens.append(vocab.itos[tok])
+                beam_tokens.append(vocab.itos[tok])
 
             inp = inp.unsqueeze(2)
+
+            src_memorys, tgt_memorys, src_ms, tgt_ms=[]
+
+            beam_tokens=beam_tokens.numpy().reshape(30,5).transpose()
+            i=0
+            for tokens in beam_tokens:
+                src_memory, tgt_memory, src_m, tgt_m=[]
+                for token in tokens :
+                    if str([token]) in lists:
+                        context_wordt = OrderedDict()
+                        for context in ss_contexts[i]:
+                            if str(context) in lists[str([token])]:
+                                for ws in lists[str([token])][str(context)].keys():
+                                    if str([context, ws]) not in context_wordt:
+                                        context_wordt[str([context, ws])] = lists[str([token])][str(context)][ws]
+                                    else:
+                                        context_wordt[str([context, ws])] = context_wordt[str([context, ws])] + \
+                                                                            lists[str([token])][str(context)][ws]
+                        context_wordt_sorted = sorted(context_wordt.items(), lambda x, y: cmp(x[1], y[1]), reverse=True)
+
+                    if len(context_wordt_sorted) > 0:
+                        context_wordt_sorted = context_wordt_sorted[0:3]
+
+                        for c_w in context_wordt_sorted:
+                            w = eval(c_w[0])[1]
+                            src_memory.append(eval(c_w[0])[0])
+                            tgt_memory.append([token])
+                            src_m.append(eval(c_w[0])[0][1])
+                            tgt_m.append(w)
+
+                        if len(context_wordt_sorted) < 3:
+                            for nw in range(3 - len(context_wordt_sorted)):
+                                src_memory.append(['<blank>'] * (M * 2 + 1))
+                                tgt_memory.append(['<blank>'] * N)
+                                src_m.append('<blank> ')
+                                tgt_m.append('<blank> ')
+                    else:
+                        for nw in range(3):
+                            src_memory.append(['<blank>'] * (M * 2 + 1))
+                            tgt_memory.append(['<blank>'] * N)
+                            src_m.append('<blank> ')
+                            tgt_m.append('<blank> ')
+                else:
+                    for nw in range(3):
+                        src_memory.append(['<blank>'] * (M * 2 + 1))
+                        tgt_memory.append(['<blank>'] * N)
+                        src_m.append('<blank> ')
+                        tgt_m.append('<blank> ')
+                src_memorys.append(src_memory)
+                tgt_memorys.append(tgt_memory)
+                src_ms.append(src_m)
+                tgt_ms.append(tgt_m)
+            i+=1
+
+
 
 
             # Run one step.
             dec_out, dec_states, attn = self.model.decoder(
-                inp, src_memory, tgt_memory, src_m, tgt_m, memory_bank, src_embeddings, dec_states,
+                inp, src_memorys, tgt_memorys, src_ms, tgt_ms, memory_bank, src_embeddings, dec_states,
                 memory_lengths=memory_lengths)
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
