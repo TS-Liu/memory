@@ -189,12 +189,18 @@ class Translator(object):
 
             inp = inp.unsqueeze(2)
 
-            src_memorys, tgt_memorys, src_ms, tgt_ms=[]
+            src_memorys = []
+            tgt_memorys = []
+            src_ms = []
+            tgt_ms = []
 
             beam_tokens=beam_tokens.numpy().reshape(30,5).transpose()
             i=0
             for tokens in beam_tokens:
-                src_memory, tgt_memory, src_m, tgt_m=[]
+                src_memory = []
+                tgt_memory = []
+                src_m = []
+                tgt_m = []
                 for token in tokens :
                     if str([token]) in lists:
                         context_wordt = OrderedDict()
