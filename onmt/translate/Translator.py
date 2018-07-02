@@ -246,10 +246,17 @@ class Translator(object):
                 tgt_ms.append(tgt_m)
                 i+=1
 
-            src_memorys = Variable(torch.tensor(src_memorys).transpose().view(1,1350,1))
-            tgt_memorys = Variable(torch.tensor(tgt_memorys).transpose().view(1,450,1))
-            src_ms = Variable(torch.tensor(src_ms).transpose().view(1,450,1))
-            tgt_ms = Variable(torch.tensor(tgt_ms).transpose().view(1,450,1))
+            src_vocab = self.fields["src"].vocab
+            tgt_vocab = self.fields["tgt"].vocab
+            src_memorys = [[[src_vocab.stoi[x] for x in xx ] for xx in xxx ] for xxx in src_memorys]
+            src_ms = [[src_vocab.stoi[x] for x in xx ] for xx in src_ms ]
+            tgt_memorys = [[[tgt_vocab.stoi[x] for x in xx] for xx in xxx] for xxx in tgt_memorys]
+            tgt_ms = [[tgt_vocab.stoi[x] for x in xx] for xx in src_ms]
+
+            src_memorys = Variable(torch.Tensor(numpy.array(src_memorys)).view(30,45).transpose().contiguous().view(1,1350,1))
+            tgt_memorys = Variable(torch.Tensor(numpy.array(tgt_memorys)).view(30,15).transpose().contiguous().view(1,450,1))
+            src_ms = Variable(torch.Tensor(numpy.array(src_ms)).view(30,15).transpose().contiguous().view(1,450,1))
+            tgt_ms = Variable(torch.Tensor(numpy.array(tgt_ms)).view(30,15).transpose().contiguous().view(1,450,1))
 
 
             # Run one step.
