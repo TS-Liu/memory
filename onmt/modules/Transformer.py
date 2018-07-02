@@ -291,7 +291,7 @@ class TransformerDecoder(nn.Module):
 
         # Run the forward pass of the TransformerDecoder.
         emb = self.embeddings(tgt)
-        tgt_len, tgt_batch, tgt_embedding_dim = emb.size()
+        _, __, tgt_embedding_dim = emb.size()
         embt_m = self.embeddings(tgt_m)
         embt_memory = self.embeddings(tgt_memory)
         embs_m = src_embeddings(src_m)
