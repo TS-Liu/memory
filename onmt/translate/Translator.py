@@ -188,7 +188,7 @@ class Translator(object):
             for tok in list(inp[0].data.cpu().numpy()):
                 beam_tokens.append(vocab.itos[tok])
 
-            inp = inp.unsqueeze(2)
+            inp = inp.unsqueeze(2).cuda()
 
             src_memorys = []
             tgt_memorys = []
@@ -253,10 +253,10 @@ class Translator(object):
             tgt_memorys = [[[tgt_vocab.stoi[x] for x in xx] for xx in xxx] for xxx in tgt_memorys]
             tgt_ms = [[tgt_vocab.stoi[x] for x in xx] for xx in src_ms]
 
-            src_memorys = Variable(torch.FloatTensor(numpy.array(src_memorys)).view(30,45).transpose(0,1).contiguous().view(1,1350,1))
-            tgt_memorys = Variable(torch.FloatTensor(numpy.array(tgt_memorys)).view(30,15).transpose(0,1).contiguous().view(1,450,1))
-            src_ms = Variable(torch.FloatTensor(numpy.array(src_ms)).view(30,15).transpose(0,1).contiguous().view(1,450,1))
-            tgt_ms = Variable(torch.FloatTensor(numpy.array(tgt_ms)).view(30,15).transpose(0,1).contiguous().view(1,450,1))
+            src_memorys = Variable(torch.Tensor(numpy.array(src_memorys)).view(30,45).transpose(0,1).contiguous().view(1,1350,1)).cuda()
+            tgt_memorys = Variable(torch.Tensor(numpy.array(tgt_memorys)).view(30,15).transpose(0,1).contiguous().view(1,450,1)).cuda()
+            src_ms = Variable(torch.Tensor(numpy.array(src_ms)).view(30,15).transpose(0,1).contiguous().view(1,450,1)).cuda()
+            tgt_ms = Variable(torch.Tensor(numpy.array(tgt_ms)).view(30,15).transpose(0,1).contiguous().view(1,450,1)).cuda()
 
 
             # Run one step.
