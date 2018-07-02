@@ -197,23 +197,26 @@ class Translator(object):
 
             beam_tokens=numpy.array(beam_tokens).reshape(30,5).transpose()
             i=0
-            for tokens in beam_tokens:
+
+            for contexts in ss_contexts:
+                tokens = beam_tokens[i]
                 src_memory = []
                 tgt_memory = []
                 src_m = []
                 tgt_m = []
-                for token in tokens :
-                    if str([token]) in lists:
-                        context_wordt = OrderedDict()
-                        for context in ss_contexts[i]:
-                            if str(context) in lists[str([token])]:
-                                for ws in lists[str([token])][str(context)].keys():
+                for token in tokens:
+                    context_wordt = OrderedDict()
+                    for context in contexts :
+                        if str(context) in lists:
+                            if str([token]) in lists[str(context)]:
+                                for ws in lists[str(context)][str([token])].keys():
                                     if str([context, ws]) not in context_wordt:
-                                        context_wordt[str([context, ws])] = lists[str([token])][str(context)][ws]
+                                        context_wordt[str([context, ws])] = lists[str(context)][str([token])][ws]
                                     else:
                                         context_wordt[str([context, ws])] = context_wordt[str([context, ws])] + \
-                                                                            lists[str([token])][str(context)][ws]
-                        context_wordt_sorted = sorted(context_wordt.items(), lambda x, y: cmp(x[1], y[1]), reverse=True)
+                                                                            lists[str(context)][str([token])][ws]
+
+                    context_wordt_sorted = sorted(context_wordt.items(), lambda x, y: cmp(x[1], y[1]), reverse=True)
 
                     if len(context_wordt_sorted) > 0:
                         context_wordt_sorted = context_wordt_sorted[0:3]
