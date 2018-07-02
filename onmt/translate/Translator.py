@@ -246,7 +246,10 @@ class Translator(object):
                 tgt_ms.append(tgt_m)
                 i+=1
 
-
+            src_memorys = Variable(numpy.array(src_memorys).transpose().ravel()).unsqueeze(0).unsqueeze(2)
+            tgt_memorys = Variable(numpy.array(tgt_memorys).transpose().ravel()).unsqueeze(0).unsqueeze(2)
+            src_ms = Variable(numpy.array(src_ms).transpose().ravel()).unsqueeze(0).unsqueeze(2)
+            tgt_ms = Variable(numpy.array(tgt_ms).transpose().ravel()).unsqueeze(0).unsqueeze(2)
 
 
             # Run one step.
