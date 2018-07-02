@@ -119,7 +119,7 @@ class Translator(object):
 
         ss_contexts=[]
         for src_line in src_lines :
-            src_words = list(src_line.src)
+            src_words = [w.encode('utf-8') for w in list(src_line.src)]
             s_num = 0
             s_contexts = []
             for words in src_words:
