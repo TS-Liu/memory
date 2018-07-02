@@ -240,12 +240,6 @@ class Translator(object):
                             tgt_memory.append(['<blank>'] * N)
                             src_m.append('<blank> ')
                             tgt_m.append('<blank> ')
-                else:
-                    for nw in range(3):
-                        src_memory.append(['<blank>'] * (M * 2 + 1))
-                        tgt_memory.append(['<blank>'] * N)
-                        src_m.append('<blank> ')
-                        tgt_m.append('<blank> ')
                 src_memorys.append(src_memory)
                 tgt_memorys.append(tgt_memory)
                 src_ms.append(src_m)
