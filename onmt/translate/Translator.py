@@ -246,10 +246,10 @@ class Translator(object):
                 tgt_ms.append(tgt_m)
                 i+=1
 
-            src_memorys = Variable(numpy.array(src_memorys).transpose().ravel()).unsqueeze(0).unsqueeze(2)
-            tgt_memorys = Variable(numpy.array(tgt_memorys).transpose().ravel()).unsqueeze(0).unsqueeze(2)
-            src_ms = Variable(numpy.array(src_ms).transpose().ravel()).unsqueeze(0).unsqueeze(2)
-            tgt_ms = Variable(numpy.array(tgt_ms).transpose().ravel()).unsqueeze(0).unsqueeze(2)
+            src_memorys = Variable(torch.tensor(src_memorys).transpose().view(1,1350,1))
+            tgt_memorys = Variable(torch.tensor(tgt_memorys).transpose().view(1,450,1))
+            src_ms = Variable(torch.tensor(src_ms).transpose().view(1,450,1))
+            tgt_ms = Variable(torch.tensor(tgt_ms).transpose().view(1,450,1))
 
 
             # Run one step.
