@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+import numpy
 import torch
 from torch.autograd import Variable
 
@@ -194,7 +195,7 @@ class Translator(object):
             src_ms = []
             tgt_ms = []
 
-            beam_tokens=beam_tokens.numpy().reshape(30,5).transpose()
+            beam_tokens=numpy.array(beam_tokens).reshape(30,5).transpose()
             i=0
             for tokens in beam_tokens:
                 src_memory = []
