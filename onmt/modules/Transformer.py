@@ -252,7 +252,7 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = layers.LayerNorm(hidden_size)
 
-    def forward(self, tgt, src_memory, tgt_memory, src_m, tgt_m, memory_bank, src_embeddings, state, memory_lengths=None):
+    def forward(self, tgt, src_memory, tgt_memory, src_m, tgt_m, memory_bank, src_embeddings, state, train=False, memory_lengths=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
@@ -263,10 +263,11 @@ class TransformerDecoder(nn.Module):
         aeq(tgt_batch, memory_batch)
 
         src = state.src
-        tgt_memory = tgt_memory[1:-1]
-        src_memory = src_memory[1:-1]
-        tgt_m = tgt_m[1:-1]
-        src_m = src_m[1:-1]
+        if train :
+            tgt_memory = tgt_memory[1:-1]
+            src_memory = src_memory[1:-1]
+            tgt_m = tgt_m[1:-1]
+            src_m = src_m[1:-1]
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         #src_m_words = src_m[:, :, 0].transpose(0, 1)
