@@ -167,7 +167,7 @@ def main():
     # Load the model.
     fields, model, model_opt = \
         onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
-    model.cuda()
+
     # File to write sentences to.
     out_file = codecs.open(opt.output, 'w', 'utf-8')
 
