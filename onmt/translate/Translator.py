@@ -195,7 +195,7 @@ class Translator(object):
             src_ms = []
             tgt_ms = []
 
-            beam_tokens=numpy.array(beam_tokens).reshape(30,5).transpose()
+            beam_tokens=numpy.array(beam_tokens).reshape(5,30).transpose()
             i=0
 
             for contexts in ss_contexts:
@@ -250,7 +250,7 @@ class Translator(object):
                 tgt_memorys.append(tgt_memory)
                 src_ms.append(src_m)
                 tgt_ms.append(tgt_m)
-            i+=1
+                i+=1
 
 
 
