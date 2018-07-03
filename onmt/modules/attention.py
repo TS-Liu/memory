@@ -224,7 +224,7 @@ class Memory_MultiheadAttention(MultiheadAttention):
             the result of the attention transformation, shape is [batch, length_q, channels]
         """
         if query_antecedent.dim()==3 :
-            query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2).repeat(1, 1, 1, 3, 1)
+            query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2).repeat(1, 1, 3, 1, 1)
         batch_size, len, query_len, e_len, h = query_antecedent.size()
         batch_size, len, key_len, e_len, h = key_antecedent.size()
         q = self.input_query_transform(query_antecedent)
@@ -237,7 +237,7 @@ class Memory_MultiheadAttention(MultiheadAttention):
         q = q / math.sqrt(key_depth_per_head)
         logits = torch.matmul(q, k.transpose(4, 5))
         if bias is not None:
-            bias = bias.unsqueeze(2).expand_as(logits)
+            bias = bias.unsqueeze(3).expand_as(logits)
             logits += bias
         attn = self.attention_softmax(logits)
         drop_attn = self.attention_dropout(attn)
