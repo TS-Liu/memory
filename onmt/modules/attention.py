@@ -234,7 +234,7 @@ class Memory_MultiheadAttention(MultiheadAttention):
         example = False
         if query_antecedent.dim()==3 :
             example=True
-            query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2).repeat(1, 1, 1, 1, 2)
+            query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2)
         batch_size, len, e_len, query_len, h = query_antecedent.size()
         batch_size, len, e_len, key_len, h = key_antecedent.size()
         q = self.input_query_transform(query_antecedent)
