@@ -137,7 +137,7 @@ class MemoryLayer(EncoderBase):
                                                   hidden_size,
                                                   hidden_size,
                                                   dropout)
-        self.ma_l3 = attention.Memory_MultiheadAttention(hidden_size,
+        self.ma_l3 = attention.Memory_MultiheadAttention(hidden_size*2,
                                                   hidden_size,
                                                   hidden_size,
                                                   dropout)
@@ -180,7 +180,7 @@ class MemoryLayer(EncoderBase):
         x = self.ma_l3_postdropout(y) + self.ma_l3_prenorm(output).unsqueeze(2).unsqueeze(2)
         # ffn layer
         b, l, d = output.size()
-        x = x.sum(3).view(b, l, d)
+        x = x.view(b, l, d)
         y = self.ffn(self.ffn_prenorm(x))
         ans = self.ffn_postdropout(y) + x
         return ans, attn
