@@ -209,13 +209,13 @@ class TextDataset(ONMTDatasetBase):
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
         fields["tgt_memory"] = torchtext.data.Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD,
+            init_token=BOS_WORD,
             pad_token=PAD_WORD)
         fields["src_m"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
         fields["tgt_m"] = torchtext.data.Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD,
+            init_token=BOS_WORD,
             pad_token=PAD_WORD)
 
         fields["src"] = torchtext.data.Field(
@@ -228,7 +228,7 @@ class TextDataset(ONMTDatasetBase):
                 torchtext.data.Field(pad_token=PAD_WORD)
 
         fields["tgt"] = torchtext.data.Field(
-            init_token=BOS_WORD, eos_token=EOS_WORD,
+            init_token=BOS_WORD,
             pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
