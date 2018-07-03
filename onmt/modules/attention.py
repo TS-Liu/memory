@@ -203,9 +203,9 @@ class Memory_MultiheadAttention(MultiheadAttention):
         Returns:
             ans: a Tensor with shape [batch, length, last_dim * num_heads]
         """
-        batch, length, _, examples, window, new_dim = x.size()
-        ans = x.transpose(1, 4).contiguous().view(batch,
-                                    length, window, examples, num_heads * new_dim)
+        batch, length, examples, _, window, new_dim = x.size()
+        ans = x.transpose(3, 4).contiguous().view(batch,
+                                    length, examples, window, num_heads * new_dim)
         return ans
     def forward(self,
                 query_antecedent,
@@ -225,8 +225,8 @@ class Memory_MultiheadAttention(MultiheadAttention):
         """
         if query_antecedent.dim()==3 :
             query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2).repeat(1, 1, 3, 1, 1)
-        batch_size, len, query_len, e_len, h = query_antecedent.size()
-        batch_size, len, key_len, e_len, h = key_antecedent.size()
+        batch_size, len, e_len, query_len, h = query_antecedent.size()
+        batch_size, len, e_len, key_len, h = key_antecedent.size()
         q = self.input_query_transform(query_antecedent)
         k = self.input_key_transform(key_antecedent)
         v = self.input_value_transform(value_antecedent)
@@ -242,7 +242,7 @@ class Memory_MultiheadAttention(MultiheadAttention):
         attn = self.attention_softmax(logits)
         drop_attn = self.attention_dropout(attn)
         x = torch.matmul(drop_attn, v)
-        top_attn = attn.view(batch_size, len, num_heads,
-                    query_len, key_len, e_len)[:, :, 0, :, :].contiguous()
+        top_attn = attn.view(batch_size, len,
+                    query_len, num_heads, key_len, e_len)[:, :, :, 0, :, :].contiguous()
         x = self.combie_heads(x, num_heads)
         return self.output_transform(x), top_attn
