@@ -253,10 +253,10 @@ class Translator(object):
             tgt_memorys = [[[tgt_vocab.stoi[x] for x in xx] for xx in xxx] for xxx in tgt_memorys]
             tgt_ms = [[tgt_vocab.stoi[x] for x in xx] for xx in src_ms]
 
-            src_memorys = Variable(torch.LongTensor(numpy.array(src_memorys)).cuda().view(-1,45).transpose(0,1).contiguous().view(1,-1,1))
-            tgt_memorys = Variable(torch.LongTensor(numpy.array(tgt_memorys)).cuda().view(-1,15).transpose(0,1).contiguous().view(1,-1,1))
-            src_ms = Variable(torch.LongTensor(numpy.array(src_ms)).cuda().view(-1,15).transpose(0,1).contiguous().view(1,-1,1))
-            tgt_ms = Variable(torch.LongTensor(numpy.array(tgt_ms)).cuda().view(-1,15).transpose(0,1).contiguous().view(1,-1,1))
+            src_memorys = Variable(torch.LongTensor(numpy.array(src_memorys)).cuda().view(-1,9).transpose(0,1).contiguous().view(9,-1,1))
+            tgt_memorys = Variable(torch.LongTensor(numpy.array(tgt_memorys)).cuda().view(-1,3).transpose(0,1).contiguous().view(3,-1,1))
+            src_ms = Variable(torch.LongTensor(numpy.array(src_ms)).cuda().view(-1,3).transpose(0,1).contiguous().view(3,-1,1))
+            tgt_ms = Variable(torch.LongTensor(numpy.array(tgt_ms)).cuda().view(-1,3).transpose(0,1).contiguous().view(3,-1,1))
 
 
             # Run one step.
