@@ -173,7 +173,7 @@ class MemoryLayer(EncoderBase):
         t_y, t_ = self.ma_l2(t_norm_x, outputt_memory, outputt_memory, self.num_heads, etc_bias)
         t_x = self.ma_l1_postdropout(t_y) + outputt_m
 
-        #t_x = torch.cat((s_x,t_x),dim=)
+        t_x = torch.cat((s_x,t_x),dim=4)
         # encoder decoder multihead attention
         y, attn = self.ma_l3(self.ma_l3_prenorm(output), t_x, outputt_m,
                              self.num_heads, None)

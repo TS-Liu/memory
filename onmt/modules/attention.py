@@ -180,7 +180,7 @@ class MultiheadAttention(nn.Module):
         return self.output_transform(x), top_attn
 
 class Memory_MultiheadAttention(MultiheadAttention):
-    def split_heads(self, x, num_heads):
+    def split_heads(self, x, num_heads,example):
         """
         Args:
             x: a Tensor with shape [batch, length, channels]
@@ -192,9 +192,12 @@ class Memory_MultiheadAttention(MultiheadAttention):
         assert channels % num_heads == 0, (
                "channels of the input should be devided by num_heads")
         new_dim = channels // num_heads
-        ans = x.view(batch, length, examples, window, num_heads, new_dim).transpose(3, 4)
+        if example:
+            ans = x.view(batch, length, examples, window, num_heads, new_dim).transpose(2, 4)
+        else:
+            ans = x.view(batch, length, examples, window, num_heads, new_dim).transpose(3, 4)
         return ans
-    def combie_heads(self, x, num_heads):
+    def combie_heads(self, x, num_heads,example):
         """
         A reverse process of split_heads function
         Args:
@@ -203,8 +206,13 @@ class Memory_MultiheadAttention(MultiheadAttention):
         Returns:
             ans: a Tensor with shape [batch, length, last_dim * num_heads]
         """
-        batch, length, examples, _, window, new_dim = x.size()
-        ans = x.transpose(3, 4).contiguous().view(batch,
+        if example:
+            batch, length, _, window, examples, new_dim = x.size()
+            ans = x.transpose(2, 4).contiguous().view(batch,
+                                                      length, examples, window, num_heads * new_dim)
+        else :
+            batch, length, examples, _, window, new_dim = x.size()
+            ans = x.transpose(3, 4).contiguous().view(batch,
                                     length, examples, window, num_heads * new_dim)
         return ans
     def forward(self,
@@ -223,16 +231,18 @@ class Memory_MultiheadAttention(MultiheadAttention):
         Returns:
             the result of the attention transformation, shape is [batch, length_q, channels]
         """
+        example = False
         if query_antecedent.dim()==3 :
-            query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2).repeat(1, 1, 3, 1, 1)
+            example=True
+            query_antecedent = query_antecedent.unsqueeze(2).unsqueeze(2).repeat(1, 1, 1, 1, 2)
         batch_size, len, e_len, query_len, h = query_antecedent.size()
         batch_size, len, e_len, key_len, h = key_antecedent.size()
         q = self.input_query_transform(query_antecedent)
         k = self.input_key_transform(key_antecedent)
         v = self.input_value_transform(value_antecedent)
-        q = self.split_heads(q, num_heads)
-        k = self.split_heads(k, num_heads)
-        v = self.split_heads(v, num_heads)
+        q = self.split_heads(q, num_heads,example)
+        k = self.split_heads(k, num_heads,example)
+        v = self.split_heads(v, num_heads,example)
         key_depth_per_head = self.total_key_depth // num_heads
         q = q / math.sqrt(key_depth_per_head)
         logits = torch.matmul(q, k.transpose(4, 5))
@@ -242,7 +252,11 @@ class Memory_MultiheadAttention(MultiheadAttention):
         attn = self.attention_softmax(logits)
         drop_attn = self.attention_dropout(attn)
         x = torch.matmul(drop_attn, v)
-        top_attn = attn.view(batch_size, len,
+        if example:
+            top_attn = attn.view(batch_size, len, num_heads,
+                                 key_len, query_len, e_len)[:, :, 0, :, :, :].contiguous()
+        else:
+            top_attn = attn.view(batch_size, len,
                     query_len, num_heads, key_len, e_len)[:, :, :, 0, :, :].contiguous()
-        x = self.combie_heads(x, num_heads)
+        x = self.combie_heads(x, num_heads,example)
         return self.output_transform(x), top_attn
