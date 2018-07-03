@@ -188,11 +188,11 @@ class Memory_MultiheadAttention(MultiheadAttention):
         Returns:
             ans: a Tensor with shape [batch * num_heads, length, channels // num_heads]
         """
-        batch, length, window, examples, channels = x.size()
+        batch, length, examples, window, channels = x.size()
         assert channels % num_heads == 0, (
                "channels of the input should be devided by num_heads")
         new_dim = channels // num_heads
-        ans = x.view(batch, length, window, examples, num_heads, new_dim).transpose(2, 4)
+        ans = x.view(batch, length, examples, window, num_heads, new_dim).transpose(1, 4)
         return ans
     def combie_heads(self, x, num_heads):
         """
@@ -204,7 +204,7 @@ class Memory_MultiheadAttention(MultiheadAttention):
             ans: a Tensor with shape [batch, length, last_dim * num_heads]
         """
         batch, length, _, examples, window, new_dim = x.size()
-        ans = x.transpose(2, 4).contiguous().view(batch,
+        ans = x.transpose(1, 4).contiguous().view(batch,
                                     length, window, examples, num_heads * new_dim)
         return ans
     def forward(self,
