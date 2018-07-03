@@ -192,7 +192,7 @@ class Memory_MultiheadAttention(MultiheadAttention):
         assert channels % num_heads == 0, (
                "channels of the input should be devided by num_heads")
         new_dim = channels // num_heads
-        ans = x.view(batch, length, examples, window, num_heads, new_dim).transpose(2, 4)
+        ans = x.view(batch, length, examples, window, num_heads, new_dim).transpose(3, 4)
         return ans
     def combie_heads(self, x, num_heads):
         """
