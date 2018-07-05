@@ -79,19 +79,19 @@ class Translator(object):
         beam_size = self.beam_size
         batch_size = batch.batch_size
         data_type = data.data_type
-        vocab = self.fields["tgt"].vocab
+        tgt_vocab = self.fields["tgt"].vocab
 
         # Define a list of tokens to exclude from ngram-blocking
         # exclusion_list = ["<t>", "</t>", "."]
-        exclusion_tokens = set([vocab.stoi[t]
+        exclusion_tokens = set([tgt_vocab.stoi[t]
                                 for t in self.ignore_when_blocking])
 
         beam = [onmt.translate.Beam(beam_size, n_best=self.n_best,
                                     cuda=self.cuda,
                                     global_scorer=self.global_scorer,
-                                    pad=vocab.stoi[onmt.io.PAD_WORD],
-                                    eos=vocab.stoi[onmt.io.EOS_WORD],
-                                    bos=vocab.stoi[onmt.io.BOS_WORD],
+                                    pad=tgt_vocab.stoi[onmt.io.PAD_WORD],
+                                    eos=tgt_vocab.stoi[onmt.io.EOS_WORD],
+                                    bos=tgt_vocab.stoi[onmt.io.BOS_WORD],
                                     min_length=self.min_length,
                                     stepwise_penalty=self.stepwise_penalty,
                                     block_ngram_repeat=self.block_ngram_repeat,
@@ -183,10 +183,10 @@ class Translator(object):
 
             # Temporary kludge solution to handle changed dim expectation
             # in the decoder
-            vocab = self.fields["tgt"].vocab
+            tgt_vocab = self.fields["tgt"].vocab
             beam_tokens=[]
             for tok in list(inp[0].data.cpu().numpy()):
-                beam_tokens.append(vocab.itos[tok])
+                beam_tokens.append(tgt_vocab.itos[tok])
 
             inp = inp.unsqueeze(2)
 
@@ -232,14 +232,14 @@ class Translator(object):
                             for nw in range(3 - len(context_wordt_sorted)):
                                 src_memory.append(['<blank>'] * (M * 2 + 1))
                                 tgt_memory.append(['<blank>'] * N)
-                                src_m.append('<blank> ')
-                                tgt_m.append('<blank> ')
+                                src_m.append('<blank>')
+                                tgt_m.append('<blank>')
                     else:
                         for nw in range(3):
                             src_memory.append(['<blank>'] * (M * 2 + 1))
                             tgt_memory.append(['<blank>'] * N)
-                            src_m.append('<blank> ')
-                            tgt_m.append('<blank> ')
+                            src_m.append('<blank>')
+                            tgt_m.append('<blank>')
                 src_memorys.append(src_memory)
                 tgt_memorys.append(tgt_memory)
                 src_ms.append(src_m)
@@ -248,10 +248,10 @@ class Translator(object):
 
             src_vocab = self.fields["src"].vocab
             tgt_vocab = self.fields["tgt"].vocab
-            src_memorys = [[[src_vocab.stoi[x] for x in xx ] for xx in xxx ] for xxx in src_memorys]
-            src_ms = [[src_vocab.stoi[x] for x in xx ] for xx in src_ms ]
-            tgt_memorys = [[[tgt_vocab.stoi[x] for x in xx] for xx in xxx] for xxx in tgt_memorys]
-            tgt_ms = [[tgt_vocab.stoi[x] for x in xx] for xx in src_ms]
+            src_memorys = [[[src_vocab.stoi[memorysx] for memorysx in memorysxx ] for memorysxx in memorysxxx ] for memorysxxx in src_memorys]
+            src_ms = [[src_vocab.stoi[msx] for msx in msxx ] for msxx in src_ms ]
+            tgt_memorys = [[[tgt_vocab.stoi[memorysx] for memorysx in memorysxx] for memorysxx in memorysxxx] for memorysxxx in tgt_memorys]
+            tgt_ms = [[tgt_vocab.stoi[msx] for msx in msxx] for msxx in src_ms]
 
             src_memorys = Variable(torch.LongTensor(numpy.array(src_memorys)).cuda().view(-1,9).transpose(0,1).contiguous().view(9,-1,1))
             tgt_memorys = Variable(torch.LongTensor(numpy.array(tgt_memorys)).cuda().view(-1,3).transpose(0,1).contiguous().view(3,-1,1))
