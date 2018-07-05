@@ -251,7 +251,7 @@ class Translator(object):
             src_memorys = [[[src_vocab.stoi[memorysx] for memorysx in memorysxx ] for memorysxx in memorysxxx ] for memorysxxx in src_memorys]
             src_ms = [[src_vocab.stoi[msx] for msx in msxx ] for msxx in src_ms ]
             tgt_memorys = [[[tgt_vocab.stoi[memorysx] for memorysx in memorysxx] for memorysxx in memorysxxx] for memorysxxx in tgt_memorys]
-            tgt_ms = [[tgt_vocab.stoi[msx] for msx in msxx] for msxx in src_ms]
+            tgt_ms = [[tgt_vocab.stoi[msx] for msx in msxx] for msxx in tgt_ms]
 
             src_memorys = Variable(torch.LongTensor(numpy.array(src_memorys)).cuda().view(-1,9).transpose(0,1).contiguous().view(9,-1,1))
             tgt_memorys = Variable(torch.LongTensor(numpy.array(tgt_memorys)).cuda().view(-1,3).transpose(0,1).contiguous().view(3,-1,1))
