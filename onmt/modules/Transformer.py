@@ -266,7 +266,7 @@ class TransformerDecoder(nn.Module):
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         #src_m_words = src_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1)
-        tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1)
+        tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1).transpose(2, 3)
         src_memory_words = src_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3)
         tgt_memory_words = tgt_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1)
         src_batch, src_len = src_words.size()
