@@ -186,7 +186,7 @@ class Translator(object):
             tgt_vocab = self.fields["tgt"].vocab
             beam_tokens=[]
             for tok in list(inp[0].data.cpu().numpy()):
-                beam_tokens.append(tgt_vocab.itos[tok])
+                beam_tokens.append(tgt_vocab.itos[tok].encode('utf-8'))
 
             inp = inp.unsqueeze(2)
 
