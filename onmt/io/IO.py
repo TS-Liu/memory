@@ -262,19 +262,19 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     _build_field_vocab(fields["src_memory"], counter["src"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
-    print(" * tgt vocab size: %d." % len(fields["src_memory"].vocab))
+    print(" * src_memory vocab size: %d." % len(fields["src_memory"].vocab))
     _build_field_vocab(fields["tgt_memory"], counter["tgt"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
-    print(" * tgt vocab size: %d." % len(fields["tgt_memory"].vocab))
+    print(" * tgt_memory vocab size: %d." % len(fields["tgt_memory"].vocab))
     _build_field_vocab(fields["src_m"], counter["src"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
-    print(" * tgt vocab size: %d." % len(fields["src_m"].vocab))
+    print(" * src_m vocab size: %d." % len(fields["src_m"].vocab))
     _build_field_vocab(fields["tgt_m"], counter["tgt"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
-    print(" * tgt vocab size: %d." % len(fields["tgt_m"].vocab))
+    print(" * tgt_m vocab size: %d." % len(fields["tgt_m"].vocab))
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
