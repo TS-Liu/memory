@@ -104,7 +104,7 @@ class MultiheadAttention(nn.Module):
                  attention_dropout=0.0):
         super(MultiheadAttention, self).__init__()
         self.total_key_depth = total_key_depth
-        self.input_query_transform = nn.Linear(channels, total_key_depth)
+        self.input_query_transform = nn.Linear(total_key_depth, total_key_depth)
         self.input_key_transform = nn.Linear(total_key_depth, total_key_depth)
         self.input_value_transform = nn.Linear(channels, total_value_depth)
         self.attention_softmax = nn.Softmax(dim=-1)

@@ -168,8 +168,9 @@ class MemoryLayer(EncoderBase):
         t_x = self.ma_l1_postdropout(t_y) + outputt_m
 
         t_x = torch.cat((s_x,t_x),dim=4)
+        outputs = torch.cat((output,output),dim=4)
         # encoder decoder multihead attention
-        y, attn = self.ma_l3(self.ma_l3_prenorm(output), t_x, outputt_m,
+        y, attn = self.ma_l3(self.ma_l3_prenorm(outputs), t_x, outputt_m,
                              self.num_heads, et_bias)
         x = self.ma_l3_postdropout(y) + output.unsqueeze(2).unsqueeze(2)
         # ffn layer
