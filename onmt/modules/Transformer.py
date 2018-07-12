@@ -147,7 +147,7 @@ class MemoryLayer(EncoderBase):
                                     dropout)
         self.ma_l1_prenorm = layers.LayerNorm(hidden_size)
         self.ma_l2_prenorm = layers.LayerNorm(hidden_size)
-        self.ma_l3_prenorm = layers.LayerNorm(hidden_size)
+        self.ma_l3_prenorm = layers.LayerNorm(hidden_size*2)
         self.ffn_prenorm = layers.LayerNorm(hidden_size)
         self.ma_l1_postdropout = nn.Dropout(dropout)
         self.ma_l2_postdropout = nn.Dropout(dropout)
@@ -168,7 +168,7 @@ class MemoryLayer(EncoderBase):
         t_x = self.ma_l1_postdropout(t_y) + outputt_m
 
         t_x = torch.cat((s_x,t_x),dim=4)
-        outputs = torch.cat((output,output),dim=4)
+        outputs = torch.cat((output,output),dim=2)
         # encoder decoder multihead attention
         y, attn = self.ma_l3(self.ma_l3_prenorm(outputs), t_x, outputt_m,
                              self.num_heads, et_bias)
