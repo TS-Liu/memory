@@ -91,18 +91,45 @@ class DecoderLayer(EncoderBase):
                                                   hidden_size,
                                                   hidden_size,
                                                   dropout)
+
+        self.ma_m1 = attention.Memory_MultiheadAttention(hidden_size,
+                                                         hidden_size,
+                                                         hidden_size,
+                                                         dropout)
+        self.ma_m2 = attention.Memory_MultiheadAttention(hidden_size,
+                                                         hidden_size,
+                                                         hidden_size,
+                                                         dropout)
+        self.ma_m3 = attention.Memory_MultiheadAttention(hidden_size * 2,
+                                                         hidden_size,
+                                                         hidden_size,
+                                                         dropout)
+
+
         self.ffn = layers.ffn_layer(hidden_size,
                                     filter_size,
                                     hidden_size,
                                     dropout)
         self.ma_l1_prenorm = layers.LayerNorm(hidden_size)
         self.ma_l2_prenorm = layers.LayerNorm(hidden_size)
+
+        self.ma_m1_prenorm = layers.LayerNorm(hidden_size)
+        self.ma_m2_prenorm = layers.LayerNorm(hidden_size)
+        self.ma_m3_prenorm = layers.LayerNorm(hidden_size * 2)
+
         self.ffn_prenorm = layers.LayerNorm(hidden_size)
+
         self.ma_l1_postdropout = nn.Dropout(dropout)
         self.ma_l2_postdropout = nn.Dropout(dropout)
+
+        self.ma_m1_postdropout = nn.Dropout(dropout)
+        self.ma_m2_postdropout = nn.Dropout(dropout)
+        self.ma_m3_postdropout = nn.Dropout(dropout)
+
         self.ffn_postdropout = nn.Dropout(dropout)
 
-    def forward(self, x, encoder_output, self_attention_bias,
+    def forward(self, x, encoder_output, outputs_m, outputt_m, outputs_memory, outputt_memory, esc_bias,
+                         etc_bias, et_bias, self_attention_bias,
                 encoder_decoder_bias, previous_input=None):
  
         # self multihead attention
@@ -117,9 +144,32 @@ class DecoderLayer(EncoderBase):
         y, attn = self.ma_l2(self.ma_l2_prenorm(x), encoder_output,
                                     self.num_heads, encoder_decoder_bias)
         x = self.ma_l2_postdropout(y) + x
+
+        #memory
+        s_norm_x = self.ma_m1_prenorm(outputs_m)
+
+        s_y, s_ = self.ma_m1(s_norm_x, outputs_memory, outputs_memory, self.num_heads, esc_bias)
+        s_x = self.ma_m1_postdropout(s_y) + outputs_m
+
+        t_norm_x = self.ma_m1_prenorm(outputt_m)
+
+        t_y, t_ = self.ma_m2(t_norm_x, outputt_memory, outputt_memory, self.num_heads, etc_bias)
+        t_x = self.ma_m1_postdropout(t_y) + outputt_m
+
+        t_x = torch.cat((s_x, t_x), dim=4)
+        outputs = torch.cat((x, x), dim=2)
+        # encoder decoder multihead attention
+        y, attn = self.ma_m3(self.ma_l3_prenorm(outputs), t_x, outputt_m,
+                             self.num_heads, et_bias)
+        o = self.ma_m3_postdropout(y) + x.unsqueeze(2).unsqueeze(2)
+
+        b, l, d = x.size()
+        x = o.view(b, l, d)
+
         # ffn layer
         y = self.ffn(self.ffn_prenorm(x))
         ans = self.ffn_postdropout(y) + x
+
         return ans, attn, all_inputs
 
 
@@ -277,6 +327,10 @@ class TransformerDecoder(nn.Module):
 
         if state.previous_input is not None:
             tgt = torch.cat([state.previous_input, tgt], 0)
+            src_m = torch.cat([state.previous_sm_input, src_m], 0)
+            tgt_m = torch.cat([state.previous_tm_input, tgt_m], 0)
+            src_memory = torch.cat([state.previous_smemory_input, src_memory], 0)
+            tgt_memory = torch.cat([state.previous_tmemory_input, tgt_memory], 0)
         # END CHECKS
 
         # Initialize return variables.
@@ -294,6 +348,10 @@ class TransformerDecoder(nn.Module):
         embs_memory = src_embeddings(src_memory)
         if state.previous_input is not None:
             emb = emb[state.previous_input.size(0):, ]
+            embs_m = embs_m[state.previous_sm_input.size(0):, ]
+            embt_m = embt_m[state.previous_tm_input.size(0):, ]
+            embs_memory = embs_memory[state.previous_smemory_input.size(0):, ]
+            embt_memory = embt_memory[state.previous_tmemory_input.size(0):, ]
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         output = emb.transpose(0, 1).contiguous()
@@ -327,13 +385,13 @@ class TransformerDecoder(nn.Module):
             if state.previous_input is not None:
                 prev_layer_input = state.previous_layer_inputs[i]
             output, attn, all_input \
-                = self.layer_stack[i](output, src_memory_bank, decoder_bias,
-                               encoder_decoder_bias, previous_input=prev_layer_input)
+                = self.layer_stack[i](output, src_memory_bank, outputs_m, outputt_m, outputs_memory, outputt_memory, esc_bias,
+                         etc_bias, et_bias, decoder_bias, encoder_decoder_bias, previous_input=prev_layer_input)
             saved_inputs.append(all_input)
 
-        output, attn \
-            = self.memory(output, outputs_m, outputt_m, outputs_memory, outputt_memory, esc_bias,
-                         etc_bias, et_bias, previous_input=prev_layer_input)
+        #output, attn \
+        #    = self.memory(output, outputs_m, outputt_m, outputs_memory, outputt_memory, esc_bias,
+        #                 etc_bias, et_bias, previous_input=prev_layer_input)
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
@@ -349,7 +407,7 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = attn
 
         # Update the state.
-        state = state.update_state(tgt, saved_inputs)
+        state = state.update_state(tgt, src_m, tgt_m, src_memory, tgt_memory, saved_inputs)
         return outputs, state, attns
 
     def init_decoder_state(self, src, memory_bank, enc_hidden):
@@ -366,6 +424,10 @@ class TransformerDecoderState(DecoderState):
         """
         self.src = src
         self.previous_input = None
+        self.previous_sm_input = None
+        self.previous_tm_input = None
+        self.previous_smemory_input = None
+        self.previous_tmemory_input = None
         self.previous_layer_inputs = None
 
     @property
@@ -373,11 +435,16 @@ class TransformerDecoderState(DecoderState):
         """
         Contains attributes that need to be updated in self.beam_update().
         """
-        return (self.previous_input, self.previous_layer_inputs, self.src)
+        return (self.previous_input, self.previous_sm_input, self.previous_tm_input,
+                self.previous_smemory_input,self.previous_tmemory_input, self.previous_layer_inputs, self.src)
 
     def update_state(self, input, previous_layer_inputs):
         """ Called for every decoder forward pass. """
         state = TransformerDecoderState(self.src)
+        state.previous_sm_input = input
+        state.previous_tm_input = input
+        state.previous_smemory_input = input
+        state.previous_tmemory_input = input
         state.previous_input = input
         state.previous_layer_inputs = previous_layer_inputs
         return state
