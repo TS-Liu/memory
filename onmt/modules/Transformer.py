@@ -159,7 +159,7 @@ class DecoderLayer(EncoderBase):
         t_x = torch.cat((s_x, t_x), dim=4)
         outputs = torch.cat((x, x), dim=2)
         # encoder decoder multihead attention
-        y, attn = self.ma_m3(self.ma_l3_prenorm(outputs), t_x, outputt_m,
+        y, attn = self.ma_m3(self.ma_m3_prenorm(outputs), t_x, outputt_m,
                              self.num_heads, et_bias)
         o = self.ma_m3_postdropout(y) + x.unsqueeze(2).unsqueeze(2)
 
@@ -314,12 +314,20 @@ class TransformerDecoder(nn.Module):
             src_memory = src_memory[1:-1]
             tgt_m = tgt_m[1:-1]
             src_m = src_m[1:-1]
-        src_words = src[:, :, 0].transpose(0, 1)
-        tgt_words = tgt[:, :, 0].transpose(0, 1)
-        #src_m_words = src_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1)
-        tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1).transpose(2, 3)
-        src_memory_words = src_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3)
-        tgt_memory_words = tgt_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1)
+            src_words = src[:, :, 0].transpose(0, 1)
+            tgt_words = tgt[:, :, 0].transpose(0, 1)
+            #src_m_words = src_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1)
+            tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1).transpose(2, 3)
+            src_memory_words = src_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3)
+            tgt_memory_words = tgt_memory[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1)
+        else :
+            src_words = src[:, :, 0].transpose(0, 1)
+            tgt_words = tgt[:, :, 0].transpose(0, 1)
+            tgt_m_words = tgt_m.transpose(0, 2).contiguous().view(tgt_batch, tgt_len, 3, 1).transpose(2, 3)
+            src_memory_words = src_memory.transpose(0, 2).contiguous().view(tgt_batch, tgt_len, 3, 3)
+            tgt_memory_words = tgt_memory.transpose(0, 2).contiguous().view(tgt_batch, tgt_len, 3, 1)
+
+
         src_batch, src_len = src_words.size()
         tgt_batch, tgt_len = tgt_words.size()
         aeq(tgt_batch, memory_batch, src_batch, tgt_batch)
@@ -354,12 +362,20 @@ class TransformerDecoder(nn.Module):
             embt_memory = embt_memory[state.previous_tmemory_input.size(0):, ]
         assert emb.dim() == 3  # len x batch x embedding_dim
 
-        output = emb.transpose(0, 1).contiguous()
-        outputt_m = embt_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
-        outputt_memory = embt_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
-        outputs_m = embs_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
-        outputs_memory = embs_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3, tgt_embedding_dim)
-        src_memory_bank = memory_bank.transpose(0, 1).contiguous()
+        if train:
+            output = emb.transpose(0, 1).contiguous()
+            outputt_m = embt_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
+            outputt_memory = embt_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
+            outputs_m = embs_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
+            outputs_memory = embs_memory.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 3, tgt_embedding_dim)
+            src_memory_bank = memory_bank.transpose(0, 1).contiguous()
+        else:
+            output = emb.transpose(0, 1).contiguous()
+            outputt_m = embt_m.transpose(0, 2).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
+            outputt_memory = embt_memory.transpose(0, 2).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
+            outputs_m = embs_m.transpose(0, 2).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
+            outputs_memory = embs_memory.transpose(0, 2).contiguous().view(tgt_batch, tgt_len, 3, 3, tgt_embedding_dim)
+            src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
@@ -438,13 +454,13 @@ class TransformerDecoderState(DecoderState):
         return (self.previous_input, self.previous_sm_input, self.previous_tm_input,
                 self.previous_smemory_input,self.previous_tmemory_input, self.previous_layer_inputs, self.src)
 
-    def update_state(self, input, previous_layer_inputs):
+    def update_state(self, input, src_m, tgt_m, src_memory, tgt_memory, previous_layer_inputs):
         """ Called for every decoder forward pass. """
         state = TransformerDecoderState(self.src)
-        state.previous_sm_input = input
-        state.previous_tm_input = input
-        state.previous_smemory_input = input
-        state.previous_tmemory_input = input
+        state.previous_sm_input = src_m
+        state.previous_tm_input = tgt_m
+        state.previous_smemory_input = src_memory
+        state.previous_tmemory_input = tgt_memory
         state.previous_input = input
         state.previous_layer_inputs = previous_layer_inputs
         return state
