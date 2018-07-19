@@ -288,13 +288,14 @@ class TransformerDecoder(nn.Module):
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, dropout, embeddings):
+                 copy_attn, dropout, embeddings, m_embeddings):
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
         self.decoder_type = 'transformer'
         self.num_layers = num_layers
         self.embeddings = embeddings
+        self.m_embeddings = m_embeddings
 
         self.layer_stack = nn.ModuleList([
             DecoderLayer(hidden_size, dropout) for _ in range(num_layers)])
@@ -362,8 +363,8 @@ class TransformerDecoder(nn.Module):
         # Run the forward pass of the TransformerDecoder.
         emb = self.embeddings(tgt)
         _, __, tgt_embedding_dim = emb.size()
-        embt_m = self.embeddings(tgt_m)
-        embt_memory = self.embeddings(tgt_memory)
+        embt_m = self.m_embeddings(tgt_m)
+        embt_memory = self.m_embeddings(tgt_memory)
         embs_m = src_embeddings(src_m)
         embs_memory = src_embeddings(src_memory)
         if state.previous_input is not None:

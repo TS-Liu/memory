@@ -76,7 +76,7 @@ def make_encoder(opt, embeddings):
                           opt.bridge)
 
 
-def make_decoder(opt, embeddings):
+def make_decoder(opt, embeddings, m_embeddings):
     """
     Various decoder dispatcher function.
     Args:
@@ -86,7 +86,7 @@ def make_decoder(opt, embeddings):
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
-                                  opt.dropout, embeddings)
+                                  opt.dropout, embeddings, tgtm_embeddings)
     elif opt.decoder_type == "cnn":
         return CNNDecoder(opt.dec_layers, opt.rnn_size,
                           opt.global_attention, opt.copy_attn,
@@ -171,7 +171,8 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
                                      feature_dicts, for_encoder=False)
-
+    tgtm_embeddings = make_embeddings(model_opt, tgt_dict,
+                                     feature_dicts, for_encoder=False)
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
         # src/tgt vocab should be the same if `-share_vocab` is specified.
@@ -181,7 +182,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
-    decoder = make_decoder(model_opt, tgt_embeddings)
+    decoder = make_decoder(model_opt, tgt_embeddings, tgtm_embeddings)
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
