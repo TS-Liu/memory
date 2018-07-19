@@ -206,6 +206,10 @@ class MemoryLayer(EncoderBase):
         self.ma_l3_postdropout = nn.Dropout(dropout)
         self.ffn_postdropout = nn.Dropout(dropout)
 
+        self.w = nn.Linear(hidden_size, hidden_size)
+        self.u = nn.Linear(hidden_size, hidden_size)
+        self.s = nn.Sigmoid()
+
     def forward(self, output, outputs_m, outputt_m, outputs_memory, outputt_memory, esc_bias,
                 etc_bias, et_bias, previous_input=None):
         # self multihead attention
@@ -224,10 +228,13 @@ class MemoryLayer(EncoderBase):
         # encoder decoder multihead attention
         y, attn = self.ma_l3(self.ma_l3_prenorm(outputs), t_x, outputt_m,
                              self.num_heads, et_bias)
-        x = self.ma_l3_postdropout(y) + output.unsqueeze(2).unsqueeze(2)
+        x = self.ma_l3_postdropout(y)
         # ffn layer
         b, l, d = output.size()
         x = x.view(b, l, d)
+
+        B = self.s(self.w(x)+self.u(output))
+        x = (1-B)*x + B*output
         y = self.ffn(self.ffn_prenorm(x))
         ans = self.ffn_postdropout(y) + x
         return ans, attn
