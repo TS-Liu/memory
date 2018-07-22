@@ -221,7 +221,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                 if k in checkpoint['model'].keys():
                     params[k] = checkpoint['model'][k]
 
-            model.load_state_dict(checkpoint['model'])
+            model.load_state_dict(params)
             generator.load_state_dict(checkpoint['generator'])
 
         else :
