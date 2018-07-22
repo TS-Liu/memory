@@ -193,7 +193,7 @@ class MemoryLayer(EncoderBase):
                                                          hidden_size,
                                                          hidden_size,
                                                          dropout)
-        self.ma_l4 = attention.Memory_MultiheadAttention(hidden_size,
+        self.ma_l4 = attention.MultiheadAttention(hidden_size,
                                                          hidden_size,
                                                          hidden_size,
                                                          dropout)
