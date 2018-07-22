@@ -110,7 +110,7 @@ class Trainer(object):
             grad_accum_count(int): accumulate gradients this many times.
     """
 
-    def __init__(self, model, train_loss, valid_loss, optim,
+    def __init__(self, model, train_loss, valid_loss, optim, optim2,
                  trunc_size=0, shard_size=32, data_type='text',
                  norm_method="sents", grad_accum_count=1):
         # Basic attributes.
@@ -118,6 +118,7 @@ class Trainer(object):
         self.train_loss = train_loss
         self.valid_loss = valid_loss
         self.optim = optim
+        self.optim2 = optim2
         self.trunc_size = trunc_size
         self.shard_size = shard_size
         self.data_type = data_type
@@ -181,7 +182,7 @@ class Trainer(object):
                     report_stats = report_func(
                             epoch, idx, num_batches,
                             self.progress_step,
-                            total_stats.start_time, self.optim.lr,
+                            total_stats.start_time, self.optim.lr, self.optim2.lr,
                             report_stats)
                     self.progress_step += 1
 
@@ -242,7 +243,7 @@ class Trainer(object):
         return stats
 
     def epoch_step(self, ppl, epoch):
-        return self.optim.update_learning_rate(ppl, epoch)
+        return self.optim.update_learning_rate(ppl, epoch), self.optim2.update_learning_rate(ppl, epoch)
 
     def drop_checkpoint(self, opt, epoch, fields, valid_stats):
         """ Save a resumable checkpoint.
@@ -271,6 +272,7 @@ class Trainer(object):
             'opt': opt,
             'epoch': epoch,
             'optim': self.optim,
+            'optim2': self.optim2,
         }
         torch.save(checkpoint,
                    '%s_acc_%.2f_ppl_%.2f_e%d.pt'
@@ -323,6 +325,7 @@ class Trainer(object):
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:
                     self.optim.step()
+                    self.optim2.step()
                 total_stats.update(batch_stats)
                 report_stats.update(batch_stats)
 
@@ -332,3 +335,4 @@ class Trainer(object):
 
         if self.grad_accum_count > 1:
             self.optim.step()
+            self.optim2.step()

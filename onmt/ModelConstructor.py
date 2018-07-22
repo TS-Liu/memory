@@ -201,8 +201,32 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
         print('Loading model parameters.')
-        model.load_state_dict(checkpoint['model'])
-        generator.load_state_dict(checkpoint['generator'])
+        if 1:
+            if model_opt.param_init != 0.0:
+                print('Intializing model parameters.')
+                for p in model.parameters():
+                    p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+                for p in generator.parameters():
+                    p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+            if model_opt.param_init_glorot:
+                for p in model.parameters():
+                    if p.dim() > 1:
+                        xavier_uniform(p)
+                for p in generator.parameters():
+                    if p.dim() > 1:
+                        xavier_uniform(p)
+
+            params = model.state_dict()
+            for k, v in params.items():
+                if k in checkpoint['model'].keys():
+                    params[k] = checkpoint['model'][k]
+
+            model.load_state_dict(checkpoint['model'])
+            generator.load_state_dict(checkpoint['generator'])
+
+        else :
+            model.load_state_dict(checkpoint['model'])
+            generator.load_state_dict(checkpoint['generator'])
     else:
         if model_opt.param_init != 0.0:
             print('Intializing model parameters.')
