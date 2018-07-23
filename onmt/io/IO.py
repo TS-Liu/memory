@@ -59,7 +59,14 @@ def load_fields_from_vocab(vocab, data_type="text"):
     for k, v in vocab.items():
         # Hack. Can't pickle defaultdict :(
         v.stoi = defaultdict(lambda: 0, v.stoi)
-        fields[k].vocab = v
+        if k == "src":
+            fields["src"].vocab = v
+            fields["src_m"].vocab = v
+            fields["src_memory"].vocab = v
+        else:
+            fields["tgt"].vocab = v
+            fields["tgt_m"].vocab = v
+            fields["tgt_memory"].vocab = v
     return fields
 
 

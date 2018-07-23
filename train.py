@@ -83,7 +83,7 @@ progress_step = 0
 
 def report_func(epoch, batch, num_batches,
                 progress_step,
-                start_time, lr, report_stats):
+                start_time, lr, lr2, report_stats):
     """
     This is the user-defined batch-level traing progress
     report function.
@@ -102,11 +102,11 @@ def report_func(epoch, batch, num_batches,
     if batch % opt.report_every == -1 % opt.report_every:
         report_stats.output(epoch, batch + 1, num_batches, start_time)
         if opt.exp_host:
-            report_stats.log("progress", experiment, lr)
+            report_stats.log("progress", experiment, lr, lr2)
         if opt.tensorboard:
             # Log the progress using the number of batches on the x-axis.
             report_stats.log_tensorboard(
-                "progress", writer, lr, progress_step)
+                "progress", writer, lr, lr2, progress_step)
         report_stats = onmt.Statistics()
 
     return report_stats
