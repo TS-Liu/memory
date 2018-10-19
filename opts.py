@@ -131,26 +131,21 @@ def preprocess_opts(parser):
                        help="Path to the training source data")
     group.add_argument('-train_tgt', required=True,
                        help="Path to the training target data")
-    group.add_argument('-train_src_memory', required=True,
-                       help="Path to the training source data")
-    group.add_argument('-train_trg_memory', required=True,
-                       help="Path to the training target data")
+
     group.add_argument('-train_trg_m', required=True,
-                       help="Path to the training source data")
-    group.add_argument('-train_src_m', required=True,
-                       help="Path to the training target data")
+                       help="Path to the training tgt_m data")
+    group.add_argument('-train_trg_m_p', required=True,
+                       help="Path to the training tgt_m_p data")
+
     group.add_argument('-valid_src', required=True,
                        help="Path to the validation source data")
     group.add_argument('-valid_tgt', required=True,
                        help="Path to the validation target data")
-    group.add_argument('-valid_src_memory', required=True,
-                       help="Path to the training source data")
-    group.add_argument('-valid_trg_memory', required=True,
-                       help="Path to the training target data")
+
     group.add_argument('-valid_trg_m', required=True,
-                       help="Path to the training source data")
-    group.add_argument('-valid_src_m', required=True,
-                       help="Path to the training target data")
+                       help="Path to the validation tgt_m data")
+    group.add_argument('-valid_trg_m_p', required=True,
+                       help="Path to the validation tgt_m_p data")
 
     group.add_argument('-src_dir', default="",
                        help="Source directory for image or audio files.")

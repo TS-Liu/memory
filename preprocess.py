@@ -40,7 +40,7 @@ def parse_args():
     return opt
 
 
-def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, src_memory, trg_memory, src_m, trg_m, fields,
+def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, trg_m, trg_m_p, fields,
                                       corpus_type, opt):
     '''
     Divide the big corpus into shards, and build dataset separately.
@@ -87,24 +87,18 @@ def build_save_text_dataset_in_shards(src_corpus, tgt_corpus, src_memory, trg_me
                 tgt_corpus, opt.tgt_seq_length_trunc,
                 "tgt", opt.max_shard_size,
                 assoc_iter=src_iter)
-    src_memory_iter = onmt.io.ShardedMemoryIterator(
-        src_memory, "src_memory", opt.max_shard_size,
-        assoc_iter=src_iter)
-    tgt_memory_iter = onmt.io.ShardedMemoryIterator(
-        trg_memory,"tgt_memory", opt.max_shard_size,
-        assoc_iter=src_iter)
-    src_m_iter = onmt.io.ShardedMemoryIterator(
-        src_m, "src_m", opt.max_shard_size,
-        assoc_iter=src_iter)
     tgt_m_iter = onmt.io.ShardedMemoryIterator(
-        trg_m, "tgt_m", opt.max_shard_size,
+        trg_m, "src_m", opt.max_shard_size,
+        assoc_iter=src_iter)
+    tgt_m_p_iter = onmt.io.ShardedMemoryIterator(
+        trg_m_p, "tgt_m", opt.max_shard_size,
         assoc_iter=src_iter)
 
     index = 0
     while not src_iter.hit_end():
         index += 1
         dataset = onmt.io.TextDataset(
-                fields, src_iter, tgt_iter, src_memory_iter, tgt_memory_iter, src_m_iter, tgt_m_iter,
+                fields, src_iter, tgt_iter, tgt_m_iter, tgt_m_p_iter,
                 src_iter.num_feats, tgt_iter.num_feats,
                 src_seq_length=opt.src_seq_length,
                 tgt_seq_length=opt.tgt_seq_length,
@@ -129,22 +123,18 @@ def build_save_dataset(corpus_type, fields, opt):
     if corpus_type == 'train':
         src_corpus = opt.train_src
         tgt_corpus = opt.train_tgt
-        src_memory = opt.train_src_memory
-        trg_memory = opt.train_trg_memory
-        src_m = opt.train_src_m
         trg_m = opt.train_trg_m
+        trg_m_p = opt.train_trg_m_p
     else:
         src_corpus = opt.valid_src
         tgt_corpus = opt.valid_tgt
-        src_memory = opt.valid_src_memory
-        trg_memory = opt.valid_trg_memory
-        src_m = opt.valid_src_m
         trg_m = opt.valid_trg_m
+        trg_m_p = opt.valid_trg_m_p
 
     # Currently we only do preprocess sharding for corpus: data_type=='text'.
     if opt.data_type == 'text':
         return build_save_text_dataset_in_shards(
-                src_corpus, tgt_corpus, src_memory, trg_memory, src_m, trg_m, fields,
+                src_corpus, tgt_corpus, trg_m, trg_m_p, fields,
                 corpus_type, opt)
 
     # For data_type == 'img' or 'audio', currently we don't do
