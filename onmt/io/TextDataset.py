@@ -484,8 +484,6 @@ class Field(torchtext.data.Field):
                 self.init_token, self.eos_token).count(None) - 2
         padded, lengths = [], []
         for x in minibatch:
-            if not self.use_vocab:
-                x= float(x)
             if self.pad_first:
                 padded.append(
                     [pad_token] * max(0, max_len - len(x)) +
