@@ -208,8 +208,7 @@ class TextDataset(ONMTDatasetBase):
         fields["tgt_m"] = torchtext.data.Field(
             pad_token=PAD_WORD)
         fields["tgt_m_p"] = torchtext.data.Field(
-            use_vocab=False, tensor_type=torch.FloatTensor,
-            sequential=False)
+            use_vocab=False, tensor_type=torch.FloatTensor)
 
         fields["src"] = torchtext.data.Field(
             pad_token=PAD_WORD,
