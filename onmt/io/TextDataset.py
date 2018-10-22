@@ -205,26 +205,26 @@ class TextDataset(ONMTDatasetBase):
         """
         fields = {}
 
-        fields["tgt_m"] = torchtext.data.Field(
+        fields["tgt_m"] = Field(
             pad_token=PAD_WORD)
-        fields["tgt_m_p"] = torchtext.data.Field(
+        fields["tgt_m_p"] = Field(
             use_vocab=False, tensor_type=torch.FloatTensor)
 
-        fields["src"] = torchtext.data.Field(
+        fields["src"] = Field(
             pad_token=PAD_WORD,
             include_lengths=True)
 
         for j in range(n_src_features):
             fields["src_feat_"+str(j)] = \
-                torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
+                Field(init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD)
 
-        fields["tgt"] = torchtext.data.Field(
+        fields["tgt"] = Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
             fields["tgt_feat_"+str(j)] = \
-                torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
+                Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
         def make_src(data, vocab, is_train):
@@ -236,7 +236,7 @@ class TextDataset(ONMTDatasetBase):
                     alignment[j, i, t] = 1
             return alignment
 
-        fields["src_map"] = torchtext.data.Field(
+        fields["src_map"] = Field(
             use_vocab=False, tensor_type=torch.FloatTensor,
             postprocessing=make_src, sequential=False)
 
@@ -247,11 +247,11 @@ class TextDataset(ONMTDatasetBase):
                 alignment[:sent.size(0), i] = sent
             return alignment
 
-        fields["alignment"] = torchtext.data.Field(
+        fields["alignment"] = Field(
             use_vocab=False, tensor_type=torch.LongTensor,
             postprocessing=make_tgt, sequential=False)
 
-        fields["indices"] = torchtext.data.Field(
+        fields["indices"] = Field(
             use_vocab=False, tensor_type=torch.LongTensor,
             sequential=False)
 
@@ -457,3 +457,46 @@ class ShardedMemoryIterator(object):
         example_dict = {self.side: line.split(), "indices": index}
 
         return example_dict
+
+
+class Field(torchtext.data.Field):
+    def pad(self, minibatch):
+        """Pad a batch of examples using this field.
+
+        Pads to self.fix_length if provided, otherwise pads to the length of
+        the longest example in the batch. Prepends self.init_token and appends
+        self.eos_token if those attributes are not None. Returns a tuple of the
+        padded list and a list containing lengths of each example if
+        `self.include_lengths` is `True` and `self.sequential` is `True`, else just
+        returns the padded list. If `self.sequential` is `False`, no padding is applied.
+        """
+        if self.use_vocab:
+            pad_token = self.pad_token
+        else:
+            pad_token = 0
+        minibatch = list(minibatch)
+        if not self.sequential:
+            return minibatch
+        if self.fix_length is None:
+            max_len = max(len(x) for x in minibatch)
+        else:
+            max_len = self.fix_length + (
+                self.init_token, self.eos_token).count(None) - 2
+        padded, lengths = [], []
+        for x in minibatch:
+            if self.pad_first:
+                padded.append(
+                    [pad_token] * max(0, max_len - len(x)) +
+                    ([] if self.init_token is None else [self.init_token]) +
+                    list(x[-max_len:] if self.truncate_first else x[:max_len]) +
+                    ([] if self.eos_token is None else [self.eos_token]))
+            else:
+                padded.append(
+                    ([] if self.init_token is None else [self.init_token]) +
+                    list(x[-max_len:] if self.truncate_first else x[:max_len]) +
+                    ([] if self.eos_token is None else [self.eos_token]) +
+                    [pad_token] * max(0, max_len - len(x)))
+            lengths.append(len(padded[-1]) - max(0, max_len - len(x)))
+        if self.include_lengths:
+            return (padded, lengths)
+        return padded
