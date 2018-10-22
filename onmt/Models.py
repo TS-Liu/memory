@@ -590,6 +590,7 @@ class NMTModel(nn.Module):
                          enc_state if dec_state is None
                          else dec_state,
                          train=True,
+                         base=True,
                          memory_lengths=lengths)
         if self.multigpu:
             # Not yet supported on multi-gpu

@@ -265,7 +265,7 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = layers.LayerNorm(hidden_size)
 
-    def forward(self, tgt, tgt_m, tgt_m_p, memory_bank, state, train=False,
+    def forward(self, tgt, tgt_m, tgt_m_p, memory_bank, state, train=False, base=False,
                 memory_lengths=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
@@ -277,7 +277,8 @@ class TransformerDecoder(nn.Module):
         aeq(tgt_batch, memory_batch)
 
         src = state.src
-        if train:
+
+        if base:
             src_words = src[:, :, 0].transpose(0, 1)
             tgt_words = tgt[:, :, 0].transpose(0, 1)
             #tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1).transpose(2, 3)
@@ -314,15 +315,16 @@ class TransformerDecoder(nn.Module):
             embt_m = embt_m[state.previous_tm_input.size(0):, ]
         assert emb.dim() == 3  # len x batch x embedding_dim
 
+        output = emb.transpose(0, 1).contiguous()
+        src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         if train:
-            output = emb.transpose(0, 1).contiguous()
-            outputt_m = embt_m.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3, 1, tgt_embedding_dim)
-            src_memory_bank = memory_bank.transpose(0, 1).contiguous()
+            if not base:
+                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 3, 1, tgt_embedding_dim)
+                src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         else:
-            output = emb.transpose(0, 1).contiguous()
-            outputt_m = embt_m.view(3 * tgt_len, tgt_batch, -1).transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 3,
-                                                                                                  1, tgt_embedding_dim)
-            src_memory_bank = memory_bank.transpose(0, 1).contiguous()
+            if not base:
+                outputt_m = embt_m.view(3 * src_len, src_batch, -1).transpose(0, 1).contiguous().view(src_batch, src_len, 3,                                                                                               1, tgt_embedding_dim)
+                src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
@@ -339,7 +341,7 @@ class TransformerDecoder(nn.Module):
         decoder_bias = torch.gt(tgt_pad_mask + decoder_local_mask, 0).float() * -1e9
 
         saved_inputs = []
-        if train :
+        if base :
             for i in range(self.num_layers):
                 prev_layer_input = None
                 if state.previous_input is not None:
@@ -350,7 +352,7 @@ class TransformerDecoder(nn.Module):
                 saved_inputs.append(all_input)
         else:
             output, attn \
-                = self.memory(output, outputt_m, outputt_m_p, src_memory_bank, et_bias)
+                = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, et_bias)
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
