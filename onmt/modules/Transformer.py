@@ -187,8 +187,8 @@ class MemoryLayer(EncoderBase):
     def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output):
         output = output.unsqueeze(2).repeat(1, 1, 2, 1)
         emb_output = emb_output.unsqueeze(2).repeat(1, 1, 2, 1)
-        src_memory_bank = src_memory_bank*tgt_m_p
-        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=2)
+        src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
+        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3)
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
 
@@ -325,11 +325,11 @@ class TransformerDecoder(nn.Module):
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         if train:
             if not base:
-                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1)
-                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1, tgt_embedding_dim)
+                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1).transpose(0, 1)
+                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 2, tgt_embedding_dim)
         else:
             if not base:
-                outputt_m = embt_m.view(3 * src_len, src_batch, -1).transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1, tgt_embedding_dim)
+                outputt_m = embt_m.view(3 * src_len, src_batch, -1).transpose(0, 1).contiguous().view(src_batch, src_len, 2, tgt_embedding_dim)
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
