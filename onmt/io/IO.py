@@ -345,11 +345,14 @@ class New_Batch(Batch):
 
             for (name, field) in dataset.fields.items():
                 if field is not None:
-                    if name == "tgt_m_p":
-                        batch = [getattr(x, name) for x in data]
-                    else:
-                        batch = [getattr(x, name) for x in data]
-                        setattr(self, name, field.process(batch, device=device, train=train))
+                    # if name == "tgt_m_p":
+                    #     batch = [getattr(x, name) for x in data]
+                    #     setattr(self, name, field.process(batch, device=device, train=train))
+                    # else:
+                    #     batch = [getattr(x, name) for x in data]
+                    #     setattr(self, name, field.process(batch, device=device, train=train))
+                    batch = [getattr(x, name) for x in data]
+                    setattr(self, name, field.process(batch, device=device, train=train))
 
 class Iterator(torchtext.data.Iterator):
     def __iter__(self):
