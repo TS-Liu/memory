@@ -326,11 +326,9 @@ class TransformerDecoder(nn.Module):
         if train:
             if not base:
                 outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1, tgt_embedding_dim)
-                src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 2, 1)
         else:
             if not base:
                 outputt_m = embt_m.view(3 * src_len, src_batch, -1).transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1, tgt_embedding_dim)
-                src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 2, 1)
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
@@ -366,6 +364,9 @@ class TransformerDecoder(nn.Module):
                     = self.layer_stack[i](output, src_memory_bank, decoder_bias, encoder_decoder_bias,
                                       previous_input=prev_layer_input)
                 saved_inputs.append(all_input)
+
+            src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 2, 1)
+
             output, attn \
                 = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output)
 
