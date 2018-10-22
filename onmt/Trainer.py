@@ -74,22 +74,20 @@ class Statistics(object):
                time.time() - start))
         sys.stdout.flush()
 
-    def log(self, prefix, experiment, lr, lr2):
+    def log(self, prefix, experiment, lr):
         t = self.elapsed_time()
         experiment.add_scalar_value(prefix + "_ppl", self.ppl())
         experiment.add_scalar_value(prefix + "_accuracy", self.accuracy())
         experiment.add_scalar_value(prefix + "_tgtper",  self.n_words / t)
         experiment.add_scalar_value(prefix + "_lr", lr)
-        experiment.add_scalar_value(prefix + "_lr2", lr2)
 
-    def log_tensorboard(self, prefix, writer, lr, lr2, step):
+    def log_tensorboard(self, prefix, writer, lr, step):
         t = self.elapsed_time()
         writer.add_scalar(prefix + "/xent", self.xent(), step)
         writer.add_scalar(prefix + "/ppl", self.ppl(), step)
         writer.add_scalar(prefix + "/accuracy", self.accuracy(), step)
         writer.add_scalar(prefix + "/tgtper",  self.n_words / t, step)
         writer.add_scalar(prefix + "/lr", lr, step)
-        writer.add_scalar(prefix + "/lr2", lr2, step)
 
 
 class Trainer(object):
