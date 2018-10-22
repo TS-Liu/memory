@@ -131,8 +131,7 @@ class DecoderLayer(EncoderBase):
 
         self.ffn_postdropout = nn.Dropout(dropout)
 
-    def forward(self, x, encoder_output, outputs_m, outputt_m, outputs_memory, outputt_memory, esc_bias,
-                etc_bias, et_bias, self_attention_bias,
+    def forward(self, x, encoder_output, self_attention_bias,
                 encoder_decoder_bias, previous_input=None):
         # self multihead attention
         norm_x = self.ma_l1_prenorm(x)
@@ -366,7 +365,7 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = attn
 
         # Update the state.
-        state = state.update_state(tgt, src_m, tgt_m, src_memory, tgt_memory, saved_inputs)
+        state = state.update_state(tgt, tgt_m, saved_inputs)
         return outputs, state, attns
 
     def init_decoder_state(self, src, memory_bank, enc_hidden):
@@ -382,10 +381,7 @@ class TransformerDecoderState(DecoderState):
         """
         self.src = src
         self.previous_input = None
-        self.previous_sm_input = None
         self.previous_tm_input = None
-        self.previous_smemory_input = None
-        self.previous_tmemory_input = None
         self.previous_layer_inputs = None
 
     @property
@@ -393,16 +389,13 @@ class TransformerDecoderState(DecoderState):
         """
         Contains attributes that need to be updated in self.beam_update().
         """
-        return (self.previous_input, self.previous_sm_input, self.previous_tm_input,
-                self.previous_smemory_input, self.previous_tmemory_input, self.previous_layer_inputs, self.src)
+        return (self.previous_input, self.previous_tm_input,
+                self.previous_layer_inputs, self.src)
 
-    def update_state(self, input, src_m, tgt_m, src_memory, tgt_memory, previous_layer_inputs):
+    def update_state(self, input, tgt_m, previous_layer_inputs):
         """ Called for every decoder forward pass. """
         state = TransformerDecoderState(self.src)
-        state.previous_sm_input = src_m
         state.previous_tm_input = tgt_m
-        state.previous_smemory_input = src_memory
-        state.previous_tmemory_input = tgt_memory
         state.previous_input = input
         state.previous_layer_inputs = previous_layer_inputs
         return state
