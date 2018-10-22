@@ -473,7 +473,7 @@ class Field(torchtext.data.Field):
         if self.use_vocab:
             pad_token = self.pad_token
         else:
-            pad_token = 0
+            pad_token = 0.0
         minibatch = list(minibatch)
         if not self.sequential:
             return minibatch
@@ -499,4 +499,7 @@ class Field(torchtext.data.Field):
             lengths.append(len(padded[-1]) - max(0, max_len - len(x)))
         if self.include_lengths:
             return (padded, lengths)
-        return padded
+        if self.use_vocab:
+            return padded
+        else:
+            return float(padded)
