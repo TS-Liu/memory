@@ -334,6 +334,22 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
 
     return src_examples_iter, num_src_feats
 
+class New_Batch(Batch):
+    def __init__(self, data=None, dataset=None, device=None, train=True):
+        """Create a Batch from a list of examples."""
+        if data is not None:
+            self.batch_size = len(data)
+            self.dataset = dataset
+            self.train = train
+            self.fields = dataset.fields.keys()  # copy field names
+
+            for (name, field) in dataset.fields.items():
+                if field is not None:
+                    if name == "tgt_m_p":
+                        batch = [getattr(x, name) for x in data]
+                    else:
+                        batch = [getattr(x, name) for x in data]
+                        setattr(self, name, field.process(batch, device=device, train=train))
 
 class Iterator(torchtext.data.Iterator):
     def __iter__(self):
@@ -353,8 +369,10 @@ class Iterator(torchtext.data.Iterator):
                         minibatch.reverse()
                     else:
                         minibatch.sort(key=self.sort_key, reverse=True)
-                yield Batch(minibatch, self.dataset, self.device,
-                            self.train),minibatch
+                # yield Batch(minibatch, self.dataset, self.device,
+                #             self.train),minibatch
+                yield New_Batch(minibatch, self.dataset, self.device,
+                                self.train)
             if not self.repeat:
                 return
 
@@ -394,42 +412,4 @@ class OrderedIterator(Iterator):
                 self.batches.append(sorted(b, key=self.sort_key))
 
 
-class Iterator(torchtext.data.Iterator):
-    def __iter__(self):
-        while True:
-            self.init_epoch()
-            for idx, minibatch in enumerate(self.batches):
-                # fast-forward if loaded from state
-                if self._iterations_this_epoch > idx:
-                    continue
-                self.iterations += 1
-                self._iterations_this_epoch += 1
-                if self.sort_within_batch:
-                    # NOTE: `rnn.pack_padded_sequence` requires that a minibatch
-                    # be sorted by decreasing order, which requires reversing
-                    # relative to typical sort keys
-                    if self.sort:
-                        minibatch.reverse()
-                    else:
-                        minibatch.sort(key=self.sort_key, reverse=True)
-                yield New_Batch(minibatch, self.dataset, self.device,
-                            self.train)
-            if not self.repeat:
-                return
 
-class New_Batch(Batch):
-    def __init__(self, data=None, dataset=None, device=None, train=True):
-        """Create a Batch from a list of examples."""
-        if data is not None:
-            self.batch_size = len(data)
-            self.dataset = dataset
-            self.train = train
-            self.fields = dataset.fields.keys()  # copy field names
-
-            for (name, field) in dataset.fields.items():
-                if field is not None:
-                    if name == "tgt_m_p":
-                        batch = [getattr(x, name) for x in data]
-                    else:
-                        batch = [getattr(x, name) for x in data]
-                        setattr(self, name, field.process(batch, device=device, train=train))
