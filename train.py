@@ -388,25 +388,28 @@ def build_optim(model, checkpoint):
             decay_method=opt.decay_method,
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
-    optim2 = onmt.Optim(
-        opt.optim, opt.learning_rate, opt.max_grad_norm,
-        lr_decay=opt.learning_rate_decay,
-        start_decay_at=opt.start_decay_at,
-        beta1=opt.adam_beta1,
-        beta2=opt.adam_beta2,
-        adagrad_accum=opt.adagrad_accumulator_init,
-        decay_method=opt.decay_method,
-        warmup_steps=opt.warmup_steps,
-        model_size=opt.rnn_size)
+    # optim2 = onmt.Optim(
+    #     opt.optim, opt.learning_rate, opt.max_grad_norm,
+    #     lr_decay=opt.learning_rate_decay,
+    #     start_decay_at=opt.start_decay_at,
+    #     beta1=opt.adam_beta1,
+    #     beta2=opt.adam_beta2,
+    #     adagrad_accum=opt.adagrad_accumulator_init,
+    #     decay_method=opt.decay_method,
+    #     warmup_steps=opt.warmup_steps,
+    #     model_size=opt.rnn_size)
 
-    optim.set_parameters(model.encoder.named_parameters())
-    optim.set_parameters(model.decoder.layer_stack.named_parameters())
-    optim.set_parameters(model.decoder.embeddings.named_parameters())
-    optim.set_parameters(model.decoder.layer_norm.named_parameters())
-    optim2.set_parameters(model.decoder.memory.named_parameters())
-    optim2.set_parameters(model.generator.named_parameters())
+    # optim.set_parameters(model.encoder.named_parameters())
+    # optim.set_parameters(model.decoder.layer_stack.named_parameters())
+    # optim.set_parameters(model.decoder.embeddings.named_parameters())
+    # optim.set_parameters(model.decoder.layer_norm.named_parameters())
+    # optim2.set_parameters(model.decoder.memory.named_parameters())
+    # optim2.set_parameters(model.generator.named_parameters())
+    #
+    # return optim, optim2
+    optim.set_parameters(model.named_parameters())
+    return optim
 
-    return optim, optim2
 
 
 def main():
