@@ -286,12 +286,12 @@ class TransformerDecoder(nn.Module):
 
         src = state.src
         src_len, src_batch, _ = src.size()
-        if base:
-            src_words = src[:, :, 0].transpose(0, 1)
-            tgt_words = tgt[:, :, 0].transpose(0, 1)
+        # if base:
+        src_words = src[:, :, 0].transpose(0, 1)
+        tgt_words = tgt[:, :, 0].transpose(0, 1)
 
-        else:
-            tgt_m_words = tgt_m.transpose(0, 2).contiguous().view(src_batch, src_len, 2, 1).transpose(2, 3)
+        # else:
+        #     tgt_m_words = tgt_m.transpose(0, 2).contiguous().view(src_batch, src_len, 2, 1).transpose(2, 3)
 
 
         src_batch, src_len = src_words.size()
