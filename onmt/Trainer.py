@@ -311,7 +311,7 @@ class Trainer(object):
                 if self.grad_accum_count == 1:
                     self.model.zero_grad()
                 outputs, attns, dec_state = \
-                    self.model(src, tgt, src_memory, tgt_memory, src_m, tgt_m, src_lengths, dec_state)
+                    self.model(src, tgt, tgt_m, tgt_m_p, src_lengths, dec_state)
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
