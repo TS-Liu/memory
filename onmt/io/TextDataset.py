@@ -53,7 +53,7 @@ class TextDataset(ONMTDatasetBase):
         # the src and tgt features and alignment information.
         if tgt_examples_iter is not None :
             if tgt_m_iter is not None and tgt_m_p_iter is not None:
-                examples_iter = (self._join_dicts(src, tgt, tgt_m, float(tgt_m_p)) for src, tgt, tgt_m, tgt_m_p in
+                examples_iter = (self._join_dicts(src, tgt, tgt_m, tgt_m_p) for src, tgt, tgt_m, tgt_m_p in
                              zip(src_examples_iter, tgt_examples_iter, tgt_m_iter, tgt_m_p_iter))
             else :
                 examples_iter = (self._join_dicts(src, tgt) for
@@ -208,7 +208,7 @@ class TextDataset(ONMTDatasetBase):
         fields["tgt_m"] = Field(
             pad_token=PAD_WORD)
         fields["tgt_m_p"] = Field(
-            use_vocab=False, tensor_type=torch.FloatTensor)
+            use_vocab=False)
 
         fields["src"] = Field(
             pad_token=PAD_WORD,
