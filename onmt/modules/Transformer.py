@@ -185,14 +185,14 @@ class MemoryLayer(EncoderBase):
                                             dropout)
 
     def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output):
-        output = output.unsqueeze(2).repeat(1, 1, 3, 1)
-        emb_output = emb_output.unsqueeze(2).repeat(1, 1, 3, 1)
+        output = output.unsqueeze(2).repeat(1, 1, 2, 1)
+        emb_output = emb_output.unsqueeze(2).repeat(1, 1, 2, 1)
         src_memory_bank = src_memory_bank*tgt_m_p
         src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=2)
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
 
-        sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, 3, 1)
+        sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, 2, 1)
 
         out = out/sum_out
         return out
@@ -291,7 +291,7 @@ class TransformerDecoder(nn.Module):
             tgt_words = tgt[:, :, 0].transpose(0, 1)
 
         else:
-            tgt_m_words = tgt_m.transpose(0, 2).contiguous().view(src_batch, src_len, 3, 1).transpose(2, 3)
+            tgt_m_words = tgt_m.transpose(0, 2).contiguous().view(src_batch, src_len, 2, 1).transpose(2, 3)
 
 
         src_batch, src_len = src_words.size()
@@ -325,12 +325,12 @@ class TransformerDecoder(nn.Module):
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         if train:
             if not base:
-                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 3, 1, tgt_embedding_dim)
-                src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 3, 1)
+                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1, tgt_embedding_dim)
+                src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 2, 1)
         else:
             if not base:
-                outputt_m = embt_m.view(3 * src_len, src_batch, -1).transpose(0, 1).contiguous().view(src_batch, src_len, 3,                                                                                               1, tgt_embedding_dim)
-                src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 3, 1)
+                outputt_m = embt_m.view(3 * src_len, src_batch, -1).transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1, tgt_embedding_dim)
+                src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 2, 1)
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
