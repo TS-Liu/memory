@@ -325,6 +325,7 @@ class TransformerDecoder(nn.Module):
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         if train:
             if not base:
+                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1)
                 outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1, tgt_embedding_dim)
         else:
             if not base:
