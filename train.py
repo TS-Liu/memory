@@ -224,7 +224,7 @@ def make_loss_compute(model, tgt_vocab, opt, train=True):
     return compute
 
 
-def train_model(model, fields, optim, optim2, data_type, model_opt):
+def train_model(model, fields, optim, data_type, model_opt):
     train_loss = make_loss_compute(model, fields["tgt"].vocab, opt)
     valid_loss = make_loss_compute(model, fields["tgt"].vocab, opt,
                                    train=False)
@@ -234,7 +234,7 @@ def train_model(model, fields, optim, optim2, data_type, model_opt):
     norm_method = opt.normalization
     grad_accum_count = opt.accum_count
 
-    trainer = onmt.Trainer(model, train_loss, valid_loss, optim, optim2,
+    trainer = onmt.Trainer(model, train_loss, valid_loss, optim,
                            trunc_size, shard_size, data_type,
                            norm_method, grad_accum_count)
 
@@ -263,11 +263,11 @@ def train_model(model, fields, optim, optim2, data_type, model_opt):
 
         # 3. Log to remote server.
         if opt.exp_host:
-            train_stats.log("train", experiment, optim.lr,optim2.lr)
-            valid_stats.log("valid", experiment, optim.lr,optim2.lr)
+            train_stats.log("train", experiment, optim.lr)
+            valid_stats.log("valid", experiment, optim.lr)
         if opt.tensorboard:
-            train_stats.log_tensorboard("train", writer, optim.lr,optim2.lr, epoch)
-            train_stats.log_tensorboard("valid", writer, optim.lr,optim2.lr, epoch)
+            train_stats.log_tensorboard("train", writer, optim.lr, epoch)
+            train_stats.log_tensorboard("valid", writer, optim.lr, epoch)
 
         # 4. Update the learning rate
         trainer.epoch_step(valid_stats.ppl(), epoch)
@@ -442,10 +442,11 @@ def main():
     check_save_model_path()
 
     # Build optimizer.
-    optim, optim2 = build_optim(model, checkpoint)
+    # optim, optim2 = build_optim(model, checkpoint)
+    optim= build_optim(model, checkpoint)
 
     # Do training.
-    train_model(model, fields, optim, optim2, data_type, model_opt)
+    train_model(model, fields, optim, data_type, model_opt)
 
     # If using tensorboard for logging, close the writer after training.
     if opt.tensorboard:
