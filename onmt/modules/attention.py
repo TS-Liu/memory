@@ -200,4 +200,4 @@ class Mf_Attention():
         y = self.input_y(y)
         out = self.attention_Tanh(s+u+y)
         out = self.output(out)
-
+        return out
