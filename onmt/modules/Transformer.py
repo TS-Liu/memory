@@ -330,8 +330,8 @@ class TransformerDecoder(nn.Module):
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
 
         # src_m_pad_mask = Variable(src_m_words.data.eq(padding_idx).float())
-        tgt_m_pad_mask = Variable(tgt_m_words.data.eq(padding_idx).float())
-        et_bias = torch.unsqueeze(tgt_m_pad_mask * -1e9, 3)
+        #tgt_m_pad_mask = Variable(tgt_m_words.data.eq(padding_idx).float())
+        #et_bias = torch.unsqueeze(tgt_m_pad_mask * -1e9, 3)
 
         tgt_pad_mask = Variable(tgt_words.data.eq(padding_idx).float().unsqueeze(1))
         tgt_pad_mask = tgt_pad_mask.repeat(1, tgt_len, 1)
