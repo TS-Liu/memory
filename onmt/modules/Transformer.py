@@ -177,16 +177,17 @@ class DecoderLayer(EncoderBase):
 
 class MemoryLayer(EncoderBase):
 
-    def __init__(self, hidden_size, dropout,
-                 num_heads=8, filter_size=2048):
+    def __init__(self, hidden_size, dropout):
         super(MemoryLayer, self).__init__()
-        self.num_heads = num_heads
-        self.ma_l1 = attention.Memory_MultiheadAttention(hidden_size,
-                                                         hidden_size,
-                                                         hidden_size,
-                                                         dropout)
+        self.ma_l1 = attention.Mf_Attention(hidden_size,
+                                            hidden_size,
+                                            hidden_size,
+                                            hidden_size,
+                                            dropout)
 
-    def forward(self, output, outputt_m, src_memory_bank, et_bias, encoder_decoder_bias):
+    def forward(self, output, outputt_m, src_memory_bank):
+
+
         # self multihead attention
 
 
