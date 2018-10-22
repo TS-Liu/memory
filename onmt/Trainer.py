@@ -300,11 +300,8 @@ class Trainer(object):
                 src_lengths = None
 
             tgt_outer = onmt.io.make_features(batch, 'tgt')
-
-            src_memory = onmt.io.make_features(batch, 'src_memory')
-            tgt_memory = onmt.io.make_features(batch, 'tgt_memory')
-            src_m = onmt.io.make_features(batch, 'src_m')
             tgt_m = onmt.io.make_features(batch, 'tgt_m')
+            tgt_m_p = onmt.io.make_features(batch, 'tgt_m_p')
 
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
