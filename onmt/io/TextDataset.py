@@ -208,7 +208,7 @@ class TextDataset(ONMTDatasetBase):
         fields["tgt_m"] = Field(
             pad_token=PAD_WORD)
         fields["tgt_m_p"] = Field(
-            use_vocab=False, sequential=False)
+            use_vocab=False, pad_token=PAD_WORD)
 
         fields["src"] = Field(
             pad_token=PAD_WORD,
