@@ -185,7 +185,7 @@ class MemoryLayer(EncoderBase):
                                             dropout)
 
     def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output):
-        _, tgt_len, _ = output.size()
+        tgt_batch, tgt_len, dim = output.size()
         src_len, _, _, _ = src_memory_bank.size()
         output = output.unsqueeze(2).unsqueeze(1).repeat(1, src_len, 1, 2, 1)
         emb_output = emb_output.unsqueeze(2).unsqueeze(1).repeat(1, src_len, 1, 2, 1)
@@ -194,7 +194,7 @@ class MemoryLayer(EncoderBase):
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
 
-        sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, 2, 1)
+        sum_out = out.view(tgt_batch, src_len, -1, dim).sum(dim=2).unsqueeze(2)
 
         out = out/sum_out
         return out
