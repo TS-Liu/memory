@@ -190,7 +190,7 @@ class MemoryLayer(EncoderBase):
         output = output.unsqueeze(2).repeat(1, 1, src_len*2, 1)
         emb_output = emb_output.unsqueeze(2).repeat(1, 1, src_len*2, 1)
         src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
-        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3).unsqueeze(1).repeat(1, tgt_len, 1, 1, 1).view(tgt_batch, tgt_len, -1, dim)
+        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3).unsqueeze(1).repeat(1, tgt_len, 1, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
         out = out.view(tgt_batch, tgt_len, -1)
