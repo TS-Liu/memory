@@ -185,10 +185,12 @@ class MemoryLayer(EncoderBase):
                                             dropout)
 
     def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output):
-        output = output.unsqueeze(2).repeat(1, 1, 2, 1)
-        emb_output = emb_output.unsqueeze(2).repeat(1, 1, 2, 1)
+        _, tgt_len, _ = output.size()
+        _, src_len, _ = src_memory_bank.size()
+        output = output.unsqueeze(2).unsqueeze(1).repeat(1, src_len, 1, 2, 1)
+        emb_output = emb_output.unsqueeze(2).unsqueeze(1).repeat(1, src_len, 1, 2, 1)
         src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
-        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3)
+        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3).unsqueeze(2).repeat(1, 1, tgt_len, 1, 1)
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
 

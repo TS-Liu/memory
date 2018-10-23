@@ -179,14 +179,14 @@ class MultiheadAttention(nn.Module):
         x = self.combie_heads(x, num_heads)
         return self.output_transform(x), top_attn
 
-class Mf_Attention():
+class Mf_Attention(nn.Module):
     def __init__(self,
                  total_s_depth,
                  total_u_depth,
                  total_y_depth,
                  channels,
                  attention_dropout=0.0):
-
+        super(Mf_Attention, self).__init__()
         self.input_s = nn.Linear(total_s_depth, channels)
         self.input_u = nn.Linear(total_u_depth, channels)
         self.input_y = nn.Linear(total_y_depth, channels)
