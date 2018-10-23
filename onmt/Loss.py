@@ -87,7 +87,7 @@ class LossComputeBase(nn.Module):
 
     def sharded_compute_loss(self, batch, output, attns,
                              cur_trunc, trunc_size, shard_size,
-                             normalization):
+                             normalization, base=True):
         """Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
 
@@ -117,10 +117,14 @@ class LossComputeBase(nn.Module):
         """
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
-        shard_state = self._make_shard_state(batch, output, range_, attns)
+        shard_state = self._make_shard_state(batch, output, range_, attns, base)
 
         for shard in shards(shard_state, shard_size):
-            loss, stats = self._compute_loss(batch, **shard)
+            if base:
+                loss, stats = self._compute_loss(batch, **shard)
+            else:
+                loss, stats = self.mf_compute_loss(batch, **shard)
+
             loss.div(normalization).backward()
             batch_stats.update(stats)
 
@@ -176,11 +180,18 @@ class NMTLossCompute(LossComputeBase):
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.confidence = 1.0 - label_smoothing
 
-    def _make_shard_state(self, batch, output, range_, attns=None):
-        return {
-            "output": output,
-            "target": batch.tgt[range_[0] + 1: range_[1]],
-        }
+    def _make_shard_state(self, batch, output, range_, attns=None, base=True):
+        if base:
+            return {
+                "output": output,
+                "target": batch.tgt[range_[0] + 1: range_[1]],
+            }
+        else:
+            return {
+                "output": output,
+                "target": batch.tgt[range_[0] + 1: range_[1]],
+                "loss": attns["std"],
+            }
 
     def _compute_loss(self, batch, output, target):
         scores = self.generator(self._bottle(output))
@@ -203,6 +214,14 @@ class NMTLossCompute(LossComputeBase):
             loss_data = loss.data.clone()
         else:
             loss_data = loss.data.clone()
+
+        stats = self._stats(loss_data, scores.data, target.view(-1).data)
+
+        return loss, stats
+
+    def mf_compute_loss(self, output, target, loss):
+        scores = self.generator(self._bottle(output))
+        loss_data = loss.data.clone()
 
         stats = self._stats(loss_data, scores.data, target.view(-1).data)
 
