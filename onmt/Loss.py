@@ -219,7 +219,7 @@ class NMTLossCompute(LossComputeBase):
 
         return loss, stats
 
-    def mf_compute_loss(self, output, target, loss):
+    def mf_compute_loss(self, batch, output, target, loss):
         scores = self.generator(self._bottle(output))
         loss_data = loss.data.clone()
 
