@@ -370,8 +370,7 @@ class TransformerDecoder(nn.Module):
 
             src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 2, 1)
 
-            output, attn \
-                = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output)
+            attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output)
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
