@@ -186,7 +186,7 @@ class MemoryLayer(EncoderBase):
 
     def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output):
         _, tgt_len, _ = output.size()
-        _, src_len, _ = src_memory_bank.size()
+        src_len, _, _, _ = src_memory_bank.size()
         output = output.unsqueeze(2).unsqueeze(1).repeat(1, src_len, 1, 2, 1)
         emb_output = emb_output.unsqueeze(2).unsqueeze(1).repeat(1, src_len, 1, 2, 1)
         src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
