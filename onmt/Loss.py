@@ -239,15 +239,22 @@ class NMTLossCompute(LossComputeBase):
     def mf_compute_loss(self, batch, tgt_m, output, target, loss):
         src_len, _, _ = tgt_m.size()
         scores = self.generator(self._bottle(output))
-        tgts = target.transpose()
-        tgt_m = tgt_m.view(src_len, -1).transpose()
+        tgts = target.transpose(0, 1)
+        tgt_m = tgt_m.view(src_len, -1).transpose(0, 1)
 
-        masks = torch.ByteTensor(torch.zeros(tgt_m.size()))
-        for tgt, tgtm, mask in zip(tgts, tgt_m, masks):
+        loss = loss.transpose(0, 1)
+        masks = torch.ByteTensor(torch.zeros(loss.size()))
+        i = 0
+        j = 0
+        for tgt, tgtm in zip(tgts, tgt_m):
             for t in tgt:
-                mask=mask+torch.eq(tgtm, t)
-        loss = torch.masked_select(loss,masks)
-        loss = torch.sum(loss)
+                masks[i][j] = torch.eq(tgtm, t)
+                j += 1
+            i += 1
+
+        loss = torch.masked_select(loss, masks)
+        loss = loss.view(-1)
+        loss = torch.sum(loss)/loss.size()
         loss_data = loss.data.clone()
 
         stats = self._stats(loss_data, scores.data, target.view(-1).data)
