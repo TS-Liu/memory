@@ -65,6 +65,19 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
+    def mf_compute_loss(self, batch, output, target, tgt_m, loss, **kwargs):
+        """
+                Compute the loss. Subclass must define this method.
+
+                Args:
+
+                    batch: the current batch.
+                    output: the predict output from the model.
+                    target: the validate target to compare output with.
+                    **kwargs(optional): additional info for computing loss.
+                """
+        return NotImplementedError
+
     def monolithic_compute_loss(self, batch, output, attns):
         """
         Compute the forward loss for the batch.
