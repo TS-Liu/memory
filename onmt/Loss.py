@@ -256,7 +256,7 @@ class NMTLossCompute(LossComputeBase):
         loss = torch.masked_select(loss, masks)
         loss = loss.view(-1)
         tgt_num = loss.size()
-        loss = torch.sum(loss)/tgt_num
+        loss = torch.sum(loss)/tgt_num[0]
         loss_data = loss.data.clone()
 
         stats = self._stats(loss_data, scores.data, target.view(-1).data)
