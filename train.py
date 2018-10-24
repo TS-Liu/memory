@@ -403,11 +403,12 @@ def build_optim(model, checkpoint):
             decay_method=opt.decay_method,
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
-        optim.set_parameters(model.encoder.named_parameters())
-        optim.set_parameters(model.decoder.layer_stack.named_parameters())
-        optim.set_parameters(model.decoder.embeddings.named_parameters())
-        optim.set_parameters(model.decoder.layer_norm.named_parameters())
-        optim.set_parameters(model.generator.named_parameters())
+        optim.set_parameters(model.named_parameters())
+        # optim.set_parameters(model.encoder.named_parameters())
+        # optim.set_parameters(model.decoder.layer_stack.named_parameters())
+        # optim.set_parameters(model.decoder.embeddings.named_parameters())
+        # optim.set_parameters(model.decoder.layer_norm.named_parameters())
+        # optim.set_parameters(model.generator.named_parameters())
     # optim2 = onmt.Optim(
     #     opt.optim, opt.learning_rate, opt.max_grad_norm,
     #     lr_decay=opt.learning_rate_decay,
@@ -427,7 +428,7 @@ def build_optim(model, checkpoint):
     # optim2.set_parameters(model.generator.named_parameters())
     #
     # return optim, optim2
-    # optim.set_parameters(model.named_parameters())
+    #optim.set_parameters(model.named_parameters())
     return optim
 
 
