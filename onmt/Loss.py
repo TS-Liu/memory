@@ -244,15 +244,15 @@ class NMTLossCompute(LossComputeBase):
 
         loss = loss.transpose(0, 1)
         masks = torch.zeros(loss.size()).byte()
-        masks = Variable(masks, requires_grad=False)
         i = 0
         for tgt, tgtm in zip(tgts, tgt_m):
             j = 0
             for t in tgt:
-                masks[i][j] = masks[i][j]+torch.eq(tgtm, t).byte()
+                masks[i][j] = masks[i][j]+torch.eq(tgtm, t).byte().cpu()
                 j += 1
             i += 1
 
+        masks = Variable(masks, requires_grad=False)
         loss = torch.masked_select(loss, masks)
         loss = loss.view(-1)
         loss = torch.sum(loss)/loss.size()
