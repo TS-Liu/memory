@@ -243,7 +243,7 @@ class NMTLossCompute(LossComputeBase):
         tgt_m = tgt_m.view(src_len, -1).transpose(0, 1)
 
         loss = loss.transpose(0, 1)
-        masks = torch.ByteTensor(torch.zeros(loss.size()))
+        masks = torch.zeros(loss.size()).byte()
         i = 0
         j = 0
         for tgt, tgtm in zip(tgts, tgt_m):
