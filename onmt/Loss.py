@@ -38,7 +38,7 @@ class LossComputeBase(nn.Module):
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.io.PAD_WORD]
 
-    def _make_shard_state(self, batch, output, range_, attns=None, tgt_m=None, base=True):
+    def _make_shard_state(self, batch, output, range_, attns=None, base=True):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
@@ -65,7 +65,7 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def mf_compute_loss(self, batch, output, target, tgtm, loss, **kwargs):
+    def mf_compute_loss(self, batch, tgt_m, output, target, loss, **kwargs):
         """
                 Compute the loss. Subclass must define this method.
 
@@ -130,13 +130,17 @@ class LossComputeBase(nn.Module):
         """
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
-        shard_state = self._make_shard_state(batch, output, range_, attns=attns, tgt_m=tgt_m, base=base)
+        shard_state = self._make_shard_state(batch, output, range_, attns=attns, base=base)
+
+        tgt_len, _, _ = output.size()
+        if not base:
+            shard_size = tgt_len
 
         for shard in shards(shard_state, shard_size):
             if base:
                 loss, stats = self._compute_loss(batch, **shard)
             else:
-                loss, stats = self.mf_compute_loss(batch, **shard)
+                loss, stats = self.mf_compute_loss(batch, tgt_m, **shard)
 
             loss.div(normalization).backward()
             batch_stats.update(stats)
@@ -193,7 +197,7 @@ class NMTLossCompute(LossComputeBase):
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.confidence = 1.0 - label_smoothing
 
-    def _make_shard_state(self, batch, output, range_, attns=None, tgt_m=None, base=True):
+    def _make_shard_state(self, batch, output, range_, attns=None, base=True):
         if base:
             return {
                 "output": output,
@@ -203,7 +207,6 @@ class NMTLossCompute(LossComputeBase):
             return {
                 "output": output,
                 "target": batch.tgt[range_[0] + 1: range_[1]],
-                "tgtm": tgt_m,
                 "loss": attns["std"],
             }
 
@@ -233,7 +236,7 @@ class NMTLossCompute(LossComputeBase):
 
         return loss, stats
 
-    def mf_compute_loss(self, batch, output, target, tgt_m, loss):
+    def mf_compute_loss(self, batch, tgt_m, output, target, loss):
         scores = self.generator(self._bottle(output))
 
         loss = torch.sum()
