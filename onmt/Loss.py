@@ -237,14 +237,22 @@ class NMTLossCompute(LossComputeBase):
         return loss, stats
 
     def mf_compute_loss(self, batch, tgt_m, output, target, loss):
+        src_len, _, _ = tgt_m.size()
         scores = self.generator(self._bottle(output))
+        tgts = target.transpose()
+        tgt_m = tgt_m.view(src_len, -1).transpose()
 
-        loss = torch.sum()
+        masks = torch.ByteTensor(torch.zeros(tgt_m.size()))
+        for tgt, tgtm, mask in zip(tgts, tgt_m, masks):
+            for t in tgt:
+                mask=mask+torch.eq(tgtm, t)
+        loss = torch.masked_select(loss,masks)
+        loss = torch.sum(loss)
         loss_data = loss.data.clone()
 
         stats = self._stats(loss_data, scores.data, target.view(-1).data)
 
-        return loss, stats
+        return -loss, stats
 
 
 def filter_shard_state(state, requires_grad=True, volatile=False):
