@@ -372,10 +372,25 @@ def build_model(model_opt, opt, fields, checkpoint):
 
 def build_optim(model, checkpoint):
     if opt.train_from:
-        print('Loading optimizer from checkpoint.')
-        optim = checkpoint['optim']
-        optim.optimizer.load_state_dict(
-            checkpoint['optim'].optimizer.state_dict())
+        if 0:
+            print('Loading optimizer from checkpoint.')
+            optim = checkpoint['optim']
+            optim.optimizer.load_state_dict(
+                checkpoint['optim'].optimizer.state_dict())
+            optim.set_parameters(model.named_parameters())
+        else:
+            optim = onmt.Optim(
+                opt.optim, opt.learning_rate, opt.max_grad_norm,
+                lr_decay=opt.learning_rate_decay,
+                start_decay_at=opt.start_decay_at,
+                beta1=opt.adam_beta1,
+                beta2=opt.adam_beta2,
+                adagrad_accum=opt.adagrad_accumulator_init,
+                decay_method=opt.decay_method,
+                warmup_steps=opt.warmup_steps,
+                model_size=opt.rnn_size)
+            optim.set_parameters(model.decoder.memory.named_parameters())
+
     else:
         print('Making optimizer for training.')
         optim = onmt.Optim(
@@ -388,6 +403,7 @@ def build_optim(model, checkpoint):
             decay_method=opt.decay_method,
             warmup_steps=opt.warmup_steps,
             model_size=opt.rnn_size)
+        optim.set_parameters(model.named_parameters())
     # optim2 = onmt.Optim(
     #     opt.optim, opt.learning_rate, opt.max_grad_norm,
     #     lr_decay=opt.learning_rate_decay,
@@ -407,7 +423,7 @@ def build_optim(model, checkpoint):
     # optim2.set_parameters(model.generator.named_parameters())
     #
     # return optim, optim2
-    optim.set_parameters(model.named_parameters())
+    # optim.set_parameters(model.named_parameters())
     return optim
 
 
