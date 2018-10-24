@@ -38,7 +38,7 @@ class LossComputeBase(nn.Module):
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.io.PAD_WORD]
 
-    def _make_shard_state(self, batch, output, range_, attns=None, base=True):
+    def _make_shard_state(self, batch, output, range_, tgt_m=None, attns=None, base=True):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
