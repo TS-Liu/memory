@@ -38,7 +38,7 @@ class LossComputeBase(nn.Module):
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.io.PAD_WORD]
 
-    def _make_shard_state(self, batch, output, range_, attns=None):
+    def _make_shard_state(self, batch, output, range_, attns=None, base=True):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
@@ -85,7 +85,7 @@ class LossComputeBase(nn.Module):
 
         return batch_stats
 
-    def sharded_compute_loss(self, batch, output, attns,
+    def sharded_compute_loss(self, batch, output, attns, tgt_m,
                              cur_trunc, trunc_size, shard_size,
                              normalization, base=True):
         """Compute the forward loss and backpropagate.  Computation is done
@@ -117,7 +117,7 @@ class LossComputeBase(nn.Module):
         """
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
-        shard_state = self._make_shard_state(batch, output, range_, attns, base)
+        shard_state = self._make_shard_state(batch, output, range_, tgt_m, attns, base)
 
         for shard in shards(shard_state, shard_size):
             if base:
@@ -180,7 +180,7 @@ class NMTLossCompute(LossComputeBase):
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.confidence = 1.0 - label_smoothing
 
-    def _make_shard_state(self, batch, output, range_, attns=None, base=True):
+    def _make_shard_state(self, batch, output, range_, tgt_m=None, attns=None, base=True):
         if base:
             return {
                 "output": output,
@@ -190,6 +190,7 @@ class NMTLossCompute(LossComputeBase):
             return {
                 "output": output,
                 "target": batch.tgt[range_[0] + 1: range_[1]],
+                "tgt_m": tgt_m,
                 "loss": attns["std"],
             }
 
@@ -219,8 +220,11 @@ class NMTLossCompute(LossComputeBase):
 
         return loss, stats
 
-    def mf_compute_loss(self, batch, output, target, loss):
+    def mf_compute_loss(self, batch, output, target, tgt_m, loss):
         scores = self.generator(self._bottle(output))
+
+
+        loss = loss.sum()
         loss_data = loss.data.clone()
 
         stats = self._stats(loss_data, scores.data, target.view(-1).data)

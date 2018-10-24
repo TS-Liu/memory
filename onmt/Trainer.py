@@ -313,7 +313,7 @@ class Trainer(object):
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
-                        batch, outputs, attns, j,
+                        batch, outputs, attns, tgt_m, j,
                         trunc_size, self.shard_size, normalization, base=False)
 
                 # 4. Update the parameters and statistics.
