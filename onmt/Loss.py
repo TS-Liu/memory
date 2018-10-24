@@ -233,7 +233,7 @@ class NMTLossCompute(LossComputeBase):
 
         return loss, stats
 
-    def mf_compute_loss(self, batch, tgt_m, loss, output, target, ):
+    def mf_compute_loss(self, batch, tgt_m, loss, output, target):
         scores = self.generator(self._bottle(output))
 
 
