@@ -130,7 +130,7 @@ class LossComputeBase(nn.Module):
         """
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
-        shard_state = self._make_shard_state(batch, output, range_, attns=attns, tgt_m=tgt_m, base=True)
+        shard_state = self._make_shard_state(batch, output, range_, attns=attns, tgt_m=tgt_m, base=base)
 
         for shard in shards(shard_state, shard_size):
             if base:
