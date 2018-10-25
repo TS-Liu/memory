@@ -395,15 +395,17 @@ def translate_opts(parser):
     group.add_argument('-src',   required=True,
                        help="""Source sequence to decode (one line per
                        sequence)""")
+    group.add_argument('-tgtmp', required=True,
+                       help="""Source sequence to decode (one line per
+                           sequence)""")
+    group.add_argument('-tgtm', required=True,
+                       help="""Source sequence to decode (one line per
+                           sequence)""")
+
     group.add_argument('-src_dir',   default="",
                        help='Source directory for image or audio files')
     group.add_argument('-tgt',
                        help='True target sequence (optional)')
-
-    group.add_argument('-lists', required=True,
-                       help="""Path prefix to the ".train.pt" and
-                           ".valid.pt" file path from preprocess.py""")
-
 
     group.add_argument('-output', default='pred.txt',
                        help="""Path to output the predictions (each line will
