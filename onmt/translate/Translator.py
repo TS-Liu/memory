@@ -233,7 +233,7 @@ class Translator(object):
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
         dec_out, _, _ = self.model.decoder(
-            tgt_in, tgt_m, tgt_m_p, memory_bank, dec_states, memory_lengths=src_lengths)
+            tgt_in, tgt_m, tgt_m_p, memory_bank, dec_states, memory_lengths=src_lengths, base=False)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.io.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):

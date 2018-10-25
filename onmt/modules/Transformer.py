@@ -386,7 +386,7 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = attn
 
         # Update the state.
-        state = state.update_state(tgt, tgt_m, saved_inputs)
+        state = state.update_state(tgt, saved_inputs)
         return outputs, state, attns
 
     def init_decoder_state(self, src, memory_bank, enc_hidden):
@@ -411,7 +411,7 @@ class TransformerDecoderState(DecoderState):
         """
         return (self.previous_input, self.previous_layer_inputs, self.src)
 
-    def update_state(self, input, tgt_m, previous_layer_inputs):
+    def update_state(self, input, previous_layer_inputs):
         """ Called for every decoder forward pass. """
         state = TransformerDecoderState(self.src)
         state.previous_input = input
