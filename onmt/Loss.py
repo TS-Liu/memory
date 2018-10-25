@@ -8,7 +8,6 @@ from __future__ import division
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import math
 
 import onmt
 import onmt.io
@@ -270,7 +269,7 @@ class NMTLossCompute(LossComputeBase):
 
         masks = Variable(masks.cuda(), requires_grad=False)
         loss = torch.masked_select(loss, masks)
-        loss = math.log(loss.view(-1))
+        loss = torch.log(loss.view(-1))
         loss = torch.sum(loss)
         loss_data = loss.data.clone()
 

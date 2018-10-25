@@ -194,7 +194,7 @@ class MemoryLayer(EncoderBase):
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
         out = out.view(tgt_batch, tgt_len, -1)
-        sum_out = out.sum(dim=2).unsqueeze(2)
+        sum_out = out.sum(dim=2).unsqueeze(2).view(tgt_batch, tgt_len, -1)
 
         out = out/sum_out
         return out
