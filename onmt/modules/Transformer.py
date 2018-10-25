@@ -194,7 +194,7 @@ class MemoryLayer(EncoderBase):
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
         out = torch.exp(out.view(tgt_batch, tgt_len, -1))
-        sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len)
+        sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len*2)
 
         out = out/sum_out
         return out
