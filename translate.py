@@ -100,70 +100,6 @@ def main():
     if opt.cuda:
         torch.cuda.set_device(opt.gpu)
 
-
-
-    # N = 1
-    # M = 1
-    # src_file = open(opt.train_src, 'r')
-    # trg_file = open(opt.train_tgt, 'r')
-    #
-    # align_file = open(opt.train_align, 'r')
-    #
-    # src_lines = src_file.readlines()
-    # trg_lines = trg_file.readlines()
-    # align_lines = align_file.readlines()
-    #
-    # align = OrderedDict()
-    # pool = Pool()
-    # result = []
-    # for i in range(10000):
-    #     result.append(pool.apply_async(func, args=(
-    #     i, N, M, src_lines[125 * i:125 * (i + 1)], trg_lines[125 * i:125 * (i + 1)],
-    #     align_lines[125 * i:125 * (i + 1)])))
-    # pool.close()
-    # pool.join()
-    #
-    # for i in result:
-    #     ddict = i.get()
-    #     for k, v in ddict.items():
-    #         if k not in align:
-    #             align[k] = v
-    #         else:
-    #             align[k] = v + align[k]
-    #
-    # align_sorted = sorted(align.items(), lambda x, y: cmp(x[1], y[1]), reverse=True)
-    # print(len(align_sorted))
-    #
-    # k = 0
-    # lists = OrderedDict()
-    # for align in align_sorted:
-    #     pairs = eval(align[0])
-    #     y = pairs[0]
-    #     ngram = pairs[2]
-    #     context = pairs[3]
-    #     if align[1] > 0:
-    #         if str(ngram) not in lists:
-    #             value = OrderedDict()
-    #             xy = OrderedDict()
-    #             xy[y] = align[1]
-    #             value[str(context)] = xy
-    #             lists[str(ngram)] = value
-    #         else:
-    #             if str(context) not in lists[str(ngram)]:
-    #                 xy = OrderedDict()
-    #                 xy[y] = align[1]
-    #                 lists[str(ngram)][str(context)] = xy
-    #             else:
-    #                 if y not in lists[str(ngram)][str(context)]:
-    #                     lists[str(ngram)][str(context)][y] = align[1]
-    #                 else:
-    #                     lists[str(ngram)][str(context)][y] = align[1] + lists[str(ngram)][str(context)][y]
-    #         k += 1
-    # print(k)
-    pkl_file = open(opt.lists, 'rb')
-    lists = pickle.load(pkl_file)
-    pkl_file.close()
-
     # Load the model.
     fields, model, model_opt = \
         onmt.ModelConstructor.load_test_model(opt, dummy_opt.__dict__)
@@ -173,7 +109,7 @@ def main():
 
     # Test data
     data = onmt.io.build_dataset(fields, opt.data_type,
-                                 opt.src, opt.tgt,
+                                 opt.src, opt.tgt, opt.tgt_m, opt.tgt_m_p,
                                  src_dir=opt.src_dir,
                                  sample_rate=opt.sample_rate,
                                  window_size=opt.window_size,
@@ -218,8 +154,8 @@ def main():
 
 
 
-    for batch, word_batch in data_iter:
-        batch_data = translator.translate_batch(batch, word_batch, data, lists)
+    for batch in data_iter:
+        batch_data = translator.translate_batch(batch, data)
         translations = builder.from_batch(batch_data)
 
         for trans in translations:
