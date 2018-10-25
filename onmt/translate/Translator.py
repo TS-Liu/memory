@@ -119,7 +119,7 @@ class Translator(object):
         if data_type == 'text':
             _, src_lengths = batch.src
 
-        enc_states, memory_bank, src_embeddings = self.model.encoder(src, src_lengths)
+        enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = self.model.decoder.init_decoder_state(
                                         src, memory_bank, enc_states)
 
@@ -159,7 +159,7 @@ class Translator(object):
 
             # Run one step.
             dec_out, dec_states, attn = self.model.decoder(
-                inp, tgt_m, tgt_m_p, memory_bank, src_embeddings, dec_states, base=False,
+                inp, tgt_m, tgt_m_p, memory_bank, dec_states, base=False,
                 memory_lengths=memory_lengths)
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
