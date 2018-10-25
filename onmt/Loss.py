@@ -179,7 +179,7 @@ class LossComputeBase(nn.Module):
         """
         num_correct = torch.sum(mf_masks)
         non_padding = target.ne(self.padding_idx)
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+        return onmt.Statistics(loss[0], num_correct, num_correct)
 
     def _bottle(self, v):
         return v.view(-1, v.size(2))
