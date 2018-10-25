@@ -190,7 +190,7 @@ class MemoryLayer(EncoderBase):
         output = output.unsqueeze(2).repeat(1, 1, src_len*2, 1)
         emb_output = emb_output.unsqueeze(2).repeat(1, 1, src_len*2, 1)
         src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
-        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3).unsqueeze(1).repeat(1, tgt_len, 1, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
+        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3).unsqueeze(1).repeat(1, tgt_len, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
         out = torch.exp(out.view(tgt_batch, tgt_len, -1))
@@ -327,11 +327,13 @@ class TransformerDecoder(nn.Module):
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         if train:
             if not base:
-                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len, 2, 1).transpose(0, 1)
-                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len, 2, tgt_embedding_dim)
+                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len*2, 1).transpose(0, 1)
+                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*2, tgt_embedding_dim)
         else:
             if not base:
-                outputt_m = embt_m.view(2 * src_len, src_batch, tgt_embedding_dim).transpose(0, 1).contiguous().view(src_batch, src_len, 2, tgt_embedding_dim)
+                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch/5, src_len * 2, 1).unsqueeze(1).repeat(1, 5, 1, 1).view(src_batch, src_len*2, 1).transpose(0, 1)
+                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch/5, src_len*2, tgt_embedding_dim).unsqueeze(1).repeat(1, 5, 1, 1, 1).view(src_batch, src_len*2, tgt_embedding_dim)
+
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
@@ -368,7 +370,7 @@ class TransformerDecoder(nn.Module):
                                       previous_input=prev_layer_input)
                 saved_inputs.append(all_input)
 
-            src_memory_bank = memory_bank.unsqueeze(2).repeat(1, 1, 2, 1)
+            src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
 
             attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output)
 
@@ -387,20 +389,18 @@ class TransformerDecoder(nn.Module):
         state = state.update_state(tgt, tgt_m, saved_inputs)
         return outputs, state, attns
 
-    def init_decoder_state(self, src, tgt_m, tgt_m_p, memory_bank, enc_hidden):
-        return TransformerDecoderState(src, tgt_m, tgt_m_p)
+    def init_decoder_state(self, src, memory_bank, enc_hidden):
+        return TransformerDecoderState(src)
 
 
 class TransformerDecoderState(DecoderState):
-    def __init__(self, src, tgt_m, tgt_m_p):
+    def __init__(self, src):
         """
         Args:
             src (FloatTensor): a sequence of source words tensors
                     with optional feature tensors, of size (len x batch).
         """
         self.src = src
-        self.tgt_m = tgt_m
-        self.tgt_m_p = tgt_m_p
         self.previous_input = None
         self.previous_tm_input = None
         self.previous_layer_inputs = None
@@ -424,8 +424,4 @@ class TransformerDecoderState(DecoderState):
     def repeat_beam_size_times(self, beam_size):
         """ Repeat beam_size times along batch dimension. """
         self.src = Variable(self.src.data.repeat(1, beam_size, 1),
-                            volatile=True)
-        self.tgt_m = Variable(self.tgt_m.data.repeat(1, beam_size, 1),
-                            volatile=True)
-        self.tgt_m_p = Variable(self.tgt_m_p.data.repeat(1, beam_size, 1),
                             volatile=True)
