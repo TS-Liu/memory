@@ -187,14 +187,14 @@ class MemoryLayer(EncoderBase):
     def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output):
         tgt_batch, tgt_len, dim = output.size()
         src_len, _, _ = src_memory_bank.size()
-        output = output.unsqueeze(2).repeat(1, 1, src_len*2, 1)
-        emb_output = emb_output.unsqueeze(2).repeat(1, 1, src_len*2, 1)
+        output = output.unsqueeze(2).repeat(1, 1, src_len, 1)
+        emb_output = emb_output.unsqueeze(2).repeat(1, 1, src_len, 1)
         src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
-        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=3).unsqueeze(1).repeat(1, tgt_len, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
+        src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=2).unsqueeze(1).repeat(1, tgt_len, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
         out = torch.exp(out.view(tgt_batch, tgt_len, -1))
-        sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len*2)
+        sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len)
 
         out = out/sum_out
         return out
