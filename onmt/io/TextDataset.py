@@ -61,8 +61,8 @@ class TextDataset(ONMTDatasetBase):
                                  zip(src_examples_iter, tgt_examples_iter))
         else:
             if tgt_m_iter is not None and tgt_m_p_iter is not None:
-                examples_iter = (self._join_dicts(src, tgt, tgt_m, tgt_m_p) for src, tgt, tgt_m, tgt_m_p in
-                             zip(src_examples_iter, tgt_examples_iter, tgt_m_iter, tgt_m_p_iter))
+                examples_iter = (self._join_dicts(src, tgt_m, tgt_m_p) for src, tgt_m, tgt_m_p in
+                             zip(src_examples_iter, tgt_m_iter, tgt_m_p_iter))
             else:
                 examples_iter = src_examples_iter
 
