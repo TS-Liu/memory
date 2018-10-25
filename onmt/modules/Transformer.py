@@ -402,7 +402,6 @@ class TransformerDecoderState(DecoderState):
         """
         self.src = src
         self.previous_input = None
-        self.previous_tm_input = None
         self.previous_layer_inputs = None
 
     @property
@@ -410,13 +409,11 @@ class TransformerDecoderState(DecoderState):
         """
         Contains attributes that need to be updated in self.beam_update().
         """
-        return (self.previous_input, self.previous_tm_input,
-                self.previous_layer_inputs, self.src)
+        return (self.previous_input, self.previous_layer_inputs, self.src)
 
     def update_state(self, input, tgt_m, previous_layer_inputs):
         """ Called for every decoder forward pass. """
         state = TransformerDecoderState(self.src)
-        state.previous_tm_input = tgt_m
         state.previous_input = input
         state.previous_layer_inputs = previous_layer_inputs
         return state
