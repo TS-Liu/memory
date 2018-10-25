@@ -8,6 +8,7 @@ from __future__ import division
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+import math
 
 import onmt
 import onmt.io
@@ -65,7 +66,7 @@ class LossComputeBase(nn.Module):
         """
         return NotImplementedError
 
-    def mf_compute_loss(self, batch, tgt_m, output, target, loss, **kwargs):
+    def mf_compute_loss(self, batch, tgt_m, target, loss, **kwargs):
         """
                 Compute the loss. Subclass must define this method.
 
@@ -167,6 +168,20 @@ class LossComputeBase(nn.Module):
                           .sum()
         return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
 
+    def mf_stats(self, loss, mf_masks, target):
+        """
+        Args:
+            loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
+            scores (:obj:`FloatTensor`): a score for each possible output
+            target (:obj:`FloatTensor`): true targets
+
+        Returns:
+            :obj:`Statistics` : statistics for this batch.
+        """
+        num_correct = torch.sum(mf_masks)
+        non_padding = target.ne(self.padding_idx)
+        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+
     def _bottle(self, v):
         return v.view(-1, v.size(2))
 
@@ -208,7 +223,6 @@ class NMTLossCompute(LossComputeBase):
             }
         else:
             return {
-                "output": output,
                 "target": batch.tgt[range_[0] + 1: range_[1]],
                 "loss": attns["std"],
             }
@@ -239,9 +253,8 @@ class NMTLossCompute(LossComputeBase):
 
         return loss, stats
 
-    def mf_compute_loss(self, batch, tgt_m, output, target, loss):
+    def mf_compute_loss(self, batch, tgt_m, target, loss):
         src_len, _, _ = tgt_m.size()
-        scores = self.generator(self._bottle(output))
         tgts = target.transpose(0, 1).data
         tgt_m = tgt_m.view(src_len, -1).transpose(0, 1).data
 
@@ -258,11 +271,10 @@ class NMTLossCompute(LossComputeBase):
         masks = Variable(masks.cuda(), requires_grad=False)
         loss = torch.masked_select(loss, masks)
         loss = loss.view(-1)
-        tgt_num = loss.size()
-        loss = torch.sum(loss)
+        loss = math.log(torch.sum(loss))
         loss_data = loss.data.clone()
 
-        stats = self._stats(loss_data, scores.data, target.view(-1).data)
+        stats = self.mf_stats(loss_data, masks.data, target.view(-1).data)
 
         return loss, stats
 
