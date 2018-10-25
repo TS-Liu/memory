@@ -270,7 +270,7 @@ class NMTLossCompute(LossComputeBase):
         masks = Variable(masks.cuda(), requires_grad=False)
         loss = torch.masked_select(loss, masks)
         loss = torch.log(loss.view(-1))
-        loss = torch.sum(loss)
+        loss = torch.sum(-loss)
         loss_data = loss.data.clone()
 
         stats = self.mf_stats(loss_data, masks.data, target.view(-1).data)
