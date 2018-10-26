@@ -171,7 +171,7 @@ class Translator(object):
                 # beam x tgt_vocab
                 beam_attn = unbottle(attn["std"])
 
-                beam_attn = torch.log(beam_attn)
+                beam_attn = torch.log(beam_attn).data
                 tgt_mss = tgt_m.repeat(1, 1, 5).transpose(0, 2)
                 B = 0.2
                 i = 0
