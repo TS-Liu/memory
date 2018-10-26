@@ -351,27 +351,20 @@ class TransformerDecoder(nn.Module):
         decoder_bias = torch.gt(tgt_pad_mask + decoder_local_mask, 0).float() * -1e9
 
         saved_inputs = []
-        if base :
-            for i in range(self.num_layers):
-                prev_layer_input = None
-                if state.previous_input is not None:
-                    prev_layer_input = state.previous_layer_inputs[i]
-                output, attn, all_input \
-                    = self.layer_stack[i](output, src_memory_bank, decoder_bias, encoder_decoder_bias,
-                                      previous_input=prev_layer_input)
-                saved_inputs.append(all_input)
-        else:
-            for i in range(self.num_layers):
-                prev_layer_input = None
-                if state.previous_input is not None:
-                    prev_layer_input = state.previous_layer_inputs[i]
-                output, attn, all_input \
-                    = self.layer_stack[i](output, src_memory_bank, decoder_bias, encoder_decoder_bias,
-                                      previous_input=prev_layer_input)
-                saved_inputs.append(all_input)
 
-            src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
+        for i in range(self.num_layers):
+            prev_layer_input = None
+            if state.previous_input is not None:
+                prev_layer_input = state.previous_layer_inputs[i]
+            output, attn, all_input \
+                = self.layer_stack[i](output, src_memory_bank, decoder_bias, encoder_decoder_bias,
+                                      previous_input=prev_layer_input)
+            saved_inputs.append(all_input)
 
+        if not base:
+            output = output.data
+            src_memory_bank = memory_bank.data
+            src_memory_bank = src_memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
             attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output)
 
         saved_inputs = torch.stack(saved_inputs)
