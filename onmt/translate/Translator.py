@@ -171,6 +171,7 @@ class Translator(object):
                 # beam x tgt_vocab
                 beam_attn = unbottle(attn["std"])
 
+                beam_attn = torch.log(beam_attn)
                 tgt_mss = tgt_m.repeat(1, 1, 5).transpose(0, 2)
                 B = 0.2
                 i = 0
@@ -179,7 +180,7 @@ class Translator(object):
                     for indexs in tgt_ms:
                         k = 0
                         for index in indexs:
-                            out[i][j][index] = B*beam_attn[i][j][k] + (1-B) * out[i][j][index]
+                            out[i][j][int(index)] = B*beam_attn[i][j][k] + (1-B) * out[i][j][int(index)]
                             k += 1
                         j += 1
                     i += 1
