@@ -194,12 +194,12 @@ class MemoryLayer(EncoderBase):
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
 
-        out = torch.exp(out.view(tgt_batch, tgt_len, -1))*tgt_m_pad_mask
+        out = torch.exp(out.view(tgt_batch, tgt_len, -1))
         sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len)
 
         out = out/sum_out
 
-        return out
+        return out*tgt_m_pad_mask
     def merge_hidden(self, outputt_m, src_memory_bank, tgt_m_p,):
 
         return outputt_m
