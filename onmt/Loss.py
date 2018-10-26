@@ -255,6 +255,7 @@ class NMTLossCompute(LossComputeBase):
     def mf_compute_loss(self, batch, tgt_m, target, loss):
         src_len, _, _ = tgt_m.size()
         tgts = target.transpose(0, 1).data
+        tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
         tgt_m = tgt_m.view(src_len, -1).transpose(0, 1).data
 
         loss = loss.transpose(0, 1)
@@ -268,7 +269,6 @@ class NMTLossCompute(LossComputeBase):
             i += 1
 
         masks = Variable(masks.cuda(), requires_grad=False)
-        tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
         tgt_m_pad_mask = Variable(tgt_m_words.data.ne(1).float()).unsqueeze(1)
         masks = masks*tgt_m_pad_mask
         loss = torch.masked_select(loss, masks)
