@@ -264,7 +264,7 @@ class NMTLossCompute(LossComputeBase):
         for tgt, tgtm in zip(tgts, tgt_m):
             j = 0
             for t in tgt:
-                masks[i][j] = masks[i][j]+torch.eq(tgtm, t).cpu()
+                masks[i][j] = masks[i][j]+torch.eq(tgtm, t).float().cpu()
                 j += 1
             i += 1
 
