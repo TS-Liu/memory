@@ -172,7 +172,8 @@ class Translator(object):
                 beam_attn = unbottle(attn["std"])
 
                 mf_beam_attn = torch.log(beam_attn).data
-                tgt_mss = tgt_m.repeat(1, 1, 5).transpose(0, 2)
+                src_len, src_batch, _ = tgt_m.size()
+                tgt_mss = tgt_m.view(src_len, src_batch).transpose(0, 1).unsqueeze(0).repeat(5, 1, 1)
                 B = 0.2
                 i = 0
                 for tgt_ms in tgt_mss:
