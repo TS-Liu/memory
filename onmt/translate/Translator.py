@@ -170,6 +170,19 @@ class Translator(object):
                 out = unbottle(out)
                 # beam x tgt_vocab
                 beam_attn = unbottle(attn["std"])
+
+                tgt_mss = tgt_m.repeat(1, 1, 5).transpose(0, 2)
+                B = 0.2
+                i = 0
+                for tgt_ms in tgt_mss:
+                    j = 0
+                    for indexs in tgt_ms:
+                        k = 0
+                        for index in indexs:
+                            out[i][j][index] = B*beam_attn[i][j][k] + (1-B) * out[i][j][index]
+                            k += 1
+                        j += 1
+                    i += 1
             else:
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
