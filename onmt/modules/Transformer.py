@@ -184,7 +184,7 @@ class MemoryLayer(EncoderBase):
                                             hidden_size,
                                             dropout)
 
-    def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output):
+    def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask):
         tgt_batch, tgt_len, dim = output.size()
         src_len, _, _ = src_memory_bank.size()
         output = output.unsqueeze(2).repeat(1, 1, src_len, 1)
@@ -193,10 +193,12 @@ class MemoryLayer(EncoderBase):
         src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=2).unsqueeze(1).repeat(1, tgt_len, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
 
         out = self.ma_l1(output,src_memory_bank,emb_output)
-        out = torch.exp(out.view(tgt_batch, tgt_len, -1))
+
+        out = torch.exp(out.view(tgt_batch, tgt_len, -1))*tgt_m_pad_mask
         sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len)
 
         out = out/sum_out
+
         return out
     def merge_hidden(self, outputt_m, src_memory_bank, tgt_m_p,):
 
@@ -329,10 +331,12 @@ class TransformerDecoder(nn.Module):
             if not base:
                 tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len*2, 1).transpose(0, 1)
                 outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*2, tgt_embedding_dim)
+                tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
         else:
             if not base:
                 tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch/5, src_len * 2, 1).unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len*2, 1).transpose(0, 1)
                 outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch/5, src_len*2, tgt_embedding_dim).unsqueeze(0).repeat(5, 1, 1, 1, 1).view(src_batch, src_len*2, tgt_embedding_dim)
+                tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
 
 
         padding_idx = self.embeddings.word_padding_idx
@@ -340,8 +344,8 @@ class TransformerDecoder(nn.Module):
 
         # src_m_pad_mask = Variable(src_m_words.data.eq(padding_idx).float())
         # if not base:
-        #     tgt_m_pad_mask = Variable(tgt_m_words.data.eq(padding_idx).float())
-        #     et_bias = torch.unsqueeze(tgt_m_pad_mask * -1e9, 3)
+        tgt_m_pad_mask = Variable(tgt_m_words.data.ne(padding_idx).float()).unsqueeze(1)
+
 
         tgt_pad_mask = Variable(tgt_words.data.eq(padding_idx).float().unsqueeze(1))
         tgt_pad_mask = tgt_pad_mask.repeat(1, tgt_len, 1)
@@ -363,7 +367,7 @@ class TransformerDecoder(nn.Module):
 
         if not base:
             src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
-            attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output)
+            attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask)
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
