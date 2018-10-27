@@ -184,15 +184,16 @@ class MemoryLayer(EncoderBase):
                                             hidden_size,
                                             dropout)
 
-    def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask):
+    def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask, emb_src):
         tgt_batch, tgt_len, dim = output.size()
         src_len, _, _ = src_memory_bank.size()
         output = output.unsqueeze(2).repeat(1, 1, src_len, 1)
         emb_output = emb_output.unsqueeze(2).repeat(1, 1, src_len, 1)
+        emb_src = emb_src.unsqueeze(1).unsqueeze(3).repeat(1, tgt_len, 1, 2, 1).view(tgt_batch, tgt_len, src_len, dim)
         src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
         src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=2).unsqueeze(1).repeat(1, tgt_len, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
 
-        out = self.ma_l1(output,src_memory_bank,emb_output)
+        out = self.ma_l1(output,src_memory_bank,emb_output,emb_src)
 
         out = torch.exp(out.view(tgt_batch, tgt_len, -1))
         sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len)
@@ -229,6 +230,7 @@ class TransformerEncoder(EncoderBase):
         s_len, n_batch, emb_dim = emb.size()
 
         out = emb.transpose(0, 1).contiguous()
+        emb_src = out
         words = input[:, :, 0].transpose(0, 1)
         # CHECKS
         out_batch, out_len, _ = out.size()
@@ -246,7 +248,7 @@ class TransformerEncoder(EncoderBase):
             out = self.layer_stack[i](out, bias)
         out = self.layer_norm(out)
 
-        return Variable(emb.data), out.transpose(0, 1).contiguous()
+        return Variable(emb.data), out.transpose(0, 1).contiguous(), emb_src
 
 
 class TransformerDecoder(nn.Module):
@@ -277,7 +279,7 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = layers.LayerNorm(hidden_size)
 
-    def forward(self, tgt, tgt_m, tgt_m_p, memory_bank, state, train=False, base=False,
+    def forward(self, tgt, tgt_m, tgt_m_p, memory_bank, emb_src, state, train=False, base=False,
                 memory_lengths=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
@@ -367,7 +369,7 @@ class TransformerDecoder(nn.Module):
 
         if not base:
             src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
-            attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask)
+            attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask, emb_src)
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)

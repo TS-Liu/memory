@@ -190,14 +190,16 @@ class Mf_Attention(nn.Module):
         self.input_s = nn.Linear(total_s_depth, channels)
         self.input_u = nn.Linear(total_u_depth, channels)
         self.input_y = nn.Linear(total_y_depth, channels)
+        self.input_es = nn.Linear(total_y_depth, channels)
         self.attention_Tanh = nn.Tanh()
         self.attention_dropout = nn.Dropout(attention_dropout)
         self.output = nn.Linear(channels, 1, bias=False)
 
-    def forward(self,s,u,y):
+    def forward(self,s,u,y,es):
         s = self.input_s(s)
         u = self.input_u(u)
         y = self.input_y(y)
-        out = self.attention_Tanh(s+u+y)
+        es = self.input_es(es)
+        out = self.attention_Tanh(s+u+y+es)
         out = self.output(out)
         return out
