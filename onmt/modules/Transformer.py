@@ -338,8 +338,8 @@ class TransformerDecoder(nn.Module):
             if not base:
                 tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch/5, src_len * 2, 1).unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len*2, 1).transpose(0, 1)
                 outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch/5, src_len*2, tgt_embedding_dim).unsqueeze(0).repeat(5, 1, 1, 1, 1).view(src_batch, src_len*2, tgt_embedding_dim)
-                tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
-
+                tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).unsqueeze(0).repeat(5, 1, 1).view(src_batch, src_len*2)
+                emb_src = emb_src.unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len, tgt_embedding_dim)
 
         padding_idx = self.embeddings.word_padding_idx
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())

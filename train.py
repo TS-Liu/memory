@@ -372,12 +372,13 @@ def build_model(model_opt, opt, fields, checkpoint):
 
 def build_optim(model, checkpoint):
     if opt.train_from:
-        if 0:
+        if 1:
             print('Loading optimizer from checkpoint.')
             optim = checkpoint['optim']
             optim.optimizer.load_state_dict(
                 checkpoint['optim'].optimizer.state_dict())
-            optim.set_parameters(model.named_parameters())
+            optim.set_parameters(model.decoder.memory.named_parameters())
+            #optim.set_parameters(model.named_parameters())
         else:
             optim = onmt.Optim(
                 opt.optim, opt.learning_rate, opt.max_grad_norm,
