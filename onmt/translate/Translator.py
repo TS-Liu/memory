@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import numpy
+import math
 import torch
 from torch.autograd import Variable
 
@@ -171,7 +172,7 @@ class Translator(object):
                 # beam x tgt_vocab
                 beam_attn = unbottle(attn["std"])
 
-                mf_beam_attn = torch.log(beam_attn).data
+                mf_beam_attn = beam_attn.data
                 src_len, src_batch, _ = tgt_m.size()
                 tgt_mss = tgt_m.view(src_len, src_batch).transpose(0, 1).unsqueeze(0).repeat(5, 1, 1)
                 B = 0.155
@@ -179,10 +180,12 @@ class Translator(object):
                 for tgt_ms in tgt_mss:
                     j = 0
                     for indexs in tgt_ms:
-                        k = 0
+                        in_indexs = []
                         for index in indexs:
-                            out[i][j][int(index)] = B*mf_beam_attn[i][j][k] + (1-B) * out[i][j][int(index)]
-                            k += 1
+                            if int(index) not in in_indexs and int(index) != 1:
+                                in_indexs.append(int(index))
+                                mask = indexs.eq(index).data.float()
+                                out[i][j][int(index)] = B * math.log((mf_beam_attn[i][j] * mask).sum()) + (1 - B) * out[i][j][int(index)]
                         j += 1
                     i += 1
             else:
