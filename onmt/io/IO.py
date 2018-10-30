@@ -59,11 +59,12 @@ def load_fields_from_vocab(vocab, data_type="text"):
     for k, v in vocab.items():
         # Hack. Can't pickle defaultdict :(
         v.stoi = defaultdict(lambda: 0, v.stoi)
-        if k == "src":
-            fields["src"].vocab = v
-        else:
-            fields["tgt"].vocab = v
-            fields["tgt_m"].vocab = v
+        # if k == "src":
+        #     fields["src"].vocab = v
+        # else:
+        #     fields["tgt"].vocab = v
+        #     fields["tgt_m"].vocab = v
+        fields[k].vocab = v
     return fields
 
 
@@ -272,7 +273,7 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                     val = [val]
                 counter[k].update(val)
 
-    _build_field_vocab(fields["tgt_m"], counter["tgt"],
+    _build_field_vocab(fields["tgt_m"], counter["tgt_m"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
     print(" * tgt_m vocab size: %d." % len(fields["tgt_m"].vocab))
