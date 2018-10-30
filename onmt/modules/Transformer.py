@@ -184,7 +184,7 @@ class MemoryLayer(EncoderBase):
                                             hidden_size,
                                             dropout)
 
-    def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask, emb_src):
+    def forward(self, output, outputt_m, tgt_m_p, src_memory_bank, emb_output, emb_src): #tgt_m_pad_mask,
         tgt_batch, tgt_len, dim = output.size()
         src_len, _, _ = src_memory_bank.size()
         output = output.unsqueeze(2).repeat(1, 1, src_len, 1)
@@ -199,8 +199,8 @@ class MemoryLayer(EncoderBase):
         sum_out = out.sum(dim=2).unsqueeze(2).repeat(1, 1, src_len)
 
         out = out/sum_out
-
-        return out*tgt_m_pad_mask
+        return out
+        #return out*tgt_m_pad_mask
     def merge_hidden(self, outputt_m, src_memory_bank, tgt_m_p,):
 
         return outputt_m
@@ -342,12 +342,15 @@ class TransformerDecoder(nn.Module):
                 emb_src = emb_src.unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len, tgt_embedding_dim)
 
         padding_idx = self.embeddings.word_padding_idx
+        unk_idx = 0
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
 
         # src_m_pad_mask = Variable(src_m_words.data.eq(padding_idx).float())
         # if not base:
-        tgt_m_pad_mask = Variable(tgt_m_words.data.ne(padding_idx).float()).unsqueeze(1)
+        #tgt_m_pad_mask = Variable(tgt_m_words.data.ne(padding_idx).float()).unsqueeze(1)
+        #tgt_m_unk_mask = Variable(tgt_m_words.data.ne(unk_idx).float()).unsqueeze(1)
 
+        #tgt_m_pad_mask = tgt_m_pad_mask + tgt_m_unk_mask
 
         tgt_pad_mask = Variable(tgt_words.data.eq(padding_idx).float().unsqueeze(1))
         tgt_pad_mask = tgt_pad_mask.repeat(1, tgt_len, 1)
@@ -369,7 +372,7 @@ class TransformerDecoder(nn.Module):
 
         if not base:
             src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
-            attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output, tgt_m_pad_mask, emb_src)
+            attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output, emb_src) #tgt_m_pad_mask,
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
