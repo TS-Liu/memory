@@ -189,7 +189,7 @@ class MemoryLayer(EncoderBase):
         src_len, _, _ = src_memory_bank.size()
         output = output.unsqueeze(2).repeat(1, 1, src_len, 1)
         emb_output = emb_output.unsqueeze(2).repeat(1, 1, src_len, 1)
-        emb_src = emb_src.unsqueeze(1).unsqueeze(3).repeat(1, tgt_len, 1, 2, 1).view(tgt_batch, tgt_len, src_len, dim)
+        emb_src = emb_src.unsqueeze(1).unsqueeze(3).repeat(1, tgt_len, 1, 3, 1).view(tgt_batch, tgt_len, src_len, dim)
         src_memory_bank = (src_memory_bank*tgt_m_p).transpose(0, 1)
         src_memory_bank = torch.cat((src_memory_bank,outputt_m),dim=2).unsqueeze(1).repeat(1, tgt_len, 1, 1).view(tgt_batch, tgt_len, -1, dim*2)
 
@@ -331,14 +331,14 @@ class TransformerDecoder(nn.Module):
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         if train:
             if not base:
-                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len*2, 1).transpose(0, 1)
-                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*2, tgt_embedding_dim)
-                tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
+                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len*3, 1).transpose(0, 1)
+                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*3, tgt_embedding_dim)
+                #tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
         else:
             if not base:
-                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch/5, src_len * 2, 1).unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len*2, 1).transpose(0, 1)
-                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch/5, src_len*2, tgt_embedding_dim).unsqueeze(0).repeat(5, 1, 1, 1, 1).view(src_batch, src_len*2, tgt_embedding_dim)
-                tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).unsqueeze(0).repeat(5, 1, 1).view(src_batch, src_len*2)
+                tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch/5, src_len * 3, 1).unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len*3, 1).transpose(0, 1)
+                outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch/5, src_len*3, tgt_embedding_dim).unsqueeze(0).repeat(5, 1, 1, 1, 1).view(src_batch, src_len*3, tgt_embedding_dim)
+                #tgt_m_words = tgt_m[:, :, 0].transpose(0, 1).unsqueeze(0).repeat(5, 1, 1).view(src_batch, src_len*2)
                 emb_src = emb_src.unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len, tgt_embedding_dim)
 
         padding_idx = self.embeddings.word_padding_idx
@@ -371,7 +371,7 @@ class TransformerDecoder(nn.Module):
             saved_inputs.append(all_input)
 
         if not base:
-            src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
+            src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 3, 1, 1).view(src_len*3, src_batch, tgt_embedding_dim)
             attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output, emb_src) #tgt_m_pad_mask,
 
         saved_inputs = torch.stack(saved_inputs)
