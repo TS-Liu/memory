@@ -270,8 +270,8 @@ class NMTLossCompute(LossComputeBase):
 
         masks = Variable(masks.cuda(), requires_grad=False)
         tgt_m_pad_mask = Variable(tgt_m_words.data.ne(1).float()).unsqueeze(1)
-        tgt_m_unk_mask = Variable(tgt_m_words.data.ne(0).float()).unsqueeze(1)
-        tgt_m_mask = tgt_m_unk_mask + tgt_m_pad_mask
+        tgt_m_unk_mask = Variable(tgt_m_words.data.eq(0).float()).unsqueeze(1)
+        tgt_m_mask = tgt_m_pad_mask - tgt_m_unk_mask
         masks = masks*tgt_m_mask
         loss = torch.masked_select(loss, masks.byte())
         loss = torch.log(loss.view(-1))
