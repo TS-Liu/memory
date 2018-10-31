@@ -371,7 +371,7 @@ class TransformerDecoder(nn.Module):
             saved_inputs.append(all_input)
 
         if not base:
-            src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 3, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
+            src_memory_bank = memory_bank.unsqueeze(1).repeat(1, 2, 1, 1).view(src_len*2, src_batch, tgt_embedding_dim)
             attn = self.memory(output, outputt_m, tgt_m_p, src_memory_bank, emb_output, emb_src) #tgt_m_pad_mask,
 
         saved_inputs = torch.stack(saved_inputs)
