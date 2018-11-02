@@ -214,7 +214,7 @@ class NMTLossCompute(LossComputeBase):
         abs_mask = un_tgt_m_unk_mask - tgt_m_unk_mask
 
         G_loss = torch.masked_select((tgt_m_p - B.sum(dim=2)/dim)*abs_mask, un_tgt_m_unk_mask.byte())
-        G_loss = torch.sum(-torch.log(G_loss))
+        G_loss = torch.sum(G_loss)
 
         loss = loss+G_loss
 
