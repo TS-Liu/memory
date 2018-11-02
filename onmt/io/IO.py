@@ -277,6 +277,10 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
     print(" * tgt_m vocab size: %d." % len(fields["tgt_m"].vocab))
+    _build_field_vocab(fields["src_m"], counter["src_m"],
+                       max_size=src_vocab_size,
+                       min_freq=src_words_min_frequency)
+    print(" * src_m vocab size: %d." % len(fields["src_m"].vocab))
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
