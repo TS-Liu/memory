@@ -206,9 +206,9 @@ class NMTLossCompute(LossComputeBase):
         loss = self.criterion(scores, gtruth)
 
         _, _, dim = B.size()
-        tgt_m_p = tgt_m_p.transpose(0,1)
-        tgt_m_pad_mask = Variable(tgt_m_p.data.ne(1).float()).unsqueeze(1)
-        tgt_m_unk_mask = Variable(tgt_m_p.data.eq(0).float()).unsqueeze(1)
+        tgt_m_p = tgt_m_p[:,:,0].transpose(0,1)
+        tgt_m_pad_mask = Variable(tgt_m_p.data.ne(1).float())
+        tgt_m_unk_mask = Variable(tgt_m_p.data.eq(0).float())
         tgt_m_mask = tgt_m_pad_mask - tgt_m_unk_mask
 
         G_loss = torch.masked_select(torch.abs(tgt_m_p - B.sum(dim=2)/dim), tgt_m_mask.byte())

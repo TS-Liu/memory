@@ -407,6 +407,7 @@ class TransformerDecoder(nn.Module):
 
         # Process the result and update the attentions.
         outputs = output.transpose(0, 1).contiguous()
+        B = B.transpose(0, 1).contiguous()
         attn = attn.transpose(0, 1).contiguous()
 
         attns["std"] = attn
