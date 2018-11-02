@@ -78,7 +78,7 @@ class LossComputeBase(nn.Module):
                 """
         return NotImplementedError
 
-    def monolithic_compute_loss(self, batch, output, attns, tgt_m, base=True):
+    def monolithic_compute_loss(self, batch, output, attns):
         """
         Compute the forward loss for the batch.
 
@@ -93,17 +93,15 @@ class LossComputeBase(nn.Module):
             :obj:`onmt.Statistics`: loss statistics
         """
         range_ = (0, batch.tgt.size(0))
-        shard_state = self._make_shard_state(batch, output, range_, attns, base=base)
-        if base:
-            _, batch_stats = self._compute_loss(batch, **shard_state)
-        else:
-            _, batch_stats = self.mf_compute_loss(batch, tgt_m, **shard_state)
+        shard_state = self._make_shard_state(batch, output, range_, attns)
+
+        _, batch_stats = self._compute_loss(batch, **shard_state)
 
         return batch_stats
 
-    def sharded_compute_loss(self, batch, output, attns, tgt_m,
+    def sharded_compute_loss(self, batch, output, attns,
                              cur_trunc, trunc_size, shard_size,
-                             normalization, base=True):
+                             normalization):
         """Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
 
@@ -136,14 +134,9 @@ class LossComputeBase(nn.Module):
         shard_state = self._make_shard_state(batch, output, range_, attns=attns, base=base)
 
         tgt_len, _, _ = output.size()
-        if not base:
-            shard_size = tgt_len
 
         for shard in shards(shard_state, shard_size):
-            if base:
-                loss, stats = self._compute_loss(batch, **shard)
-            else:
-                loss, stats = self.mf_compute_loss(batch, tgt_m, **shard)
+            loss, stats = self._compute_loss(batch, **shard)
 
             loss.div(normalization).backward()
             batch_stats.update(stats)
@@ -166,20 +159,6 @@ class LossComputeBase(nn.Module):
                           .masked_select(non_padding) \
                           .sum()
         return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
-
-    def mf_stats(self, loss, mf_masks, target):
-        """
-        Args:
-            loss (:obj:`FloatTensor`): the loss computed by the loss criterion.
-            scores (:obj:`FloatTensor`): a score for each possible output
-            target (:obj:`FloatTensor`): true targets
-
-        Returns:
-            :obj:`Statistics` : statistics for this batch.
-        """
-        num_correct = torch.sum(mf_masks)
-        non_padding = target.ne(self.padding_idx)
-        return onmt.Statistics(loss[0], num_correct, num_correct)
 
     def _bottle(self, v):
         return v.view(-1, v.size(2))
@@ -214,17 +193,11 @@ class NMTLossCompute(LossComputeBase):
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.confidence = 1.0 - label_smoothing
 
-    def _make_shard_state(self, batch, output, range_, attns=None, base=True):
-        if base:
-            return {
-                "output": output,
-                "target": batch.tgt[range_[0] + 1: range_[1]],
-            }
-        else:
-            return {
-                "target": batch.tgt[range_[0] + 1: range_[1]],
-                "loss": attns["std"],
-            }
+    def _make_shard_state(self, batch, output, range_, attns=None):
+        return {
+            "output": output,
+            "target": batch.tgt[range_[0] + 1: range_[1]],
+        }
 
     def _compute_loss(self, batch, output, target):
         scores = self.generator(self._bottle(output))
@@ -249,36 +222,6 @@ class NMTLossCompute(LossComputeBase):
             loss_data = loss.data.clone()
 
         stats = self._stats(loss_data, scores.data, target.view(-1).data)
-
-        return loss, stats
-
-    def mf_compute_loss(self, batch, tgt_m, target, loss):
-        src_len, _, _ = tgt_m.size()
-        tgts = target.transpose(0, 1).data
-        tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
-        tgt_m = tgt_m.view(src_len, -1).transpose(0, 1).data
-
-        loss = loss.transpose(0, 1)
-        masks = torch.zeros(loss.size())
-        i = 0
-        for tgt, tgtm in zip(tgts, tgt_m):
-            j = 0
-            for t in tgt:
-                masks[i][j] = masks[i][j]+torch.eq(tgtm, t).float().cpu()
-                j += 1
-            i += 1
-
-        masks = Variable(masks.cuda(), requires_grad=False)
-        tgt_m_pad_mask = Variable(tgt_m_words.data.ne(1).float()).unsqueeze(1)
-        tgt_m_unk_mask = Variable(tgt_m_words.data.eq(0).float()).unsqueeze(1)
-        tgt_m_mask = tgt_m_pad_mask - tgt_m_unk_mask
-        masks = masks*tgt_m_mask
-        loss = torch.masked_select(loss, masks.byte())
-        loss = torch.log(loss.view(-1))
-        loss = torch.sum(-loss)
-        loss_data = loss.data.clone()
-
-        stats = self.mf_stats(loss_data, masks.data, target.view(-1).data)
 
         return loss, stats
 

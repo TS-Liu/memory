@@ -35,7 +35,7 @@ class TextDataset(ONMTDatasetBase):
             use_filter_pred (bool): use a custom filter predicate to filter
                 out examples?
     """
-    def __init__(self, fields, src_examples_iter, tgt_examples_iter, tgt_m_iter=None, tgt_m_p_iter=None,
+    def __init__(self, fields, src_examples_iter, tgt_examples_iter, src_m_iter=None, tgt_m_iter=None, tgt_m_p_iter=None,
                  num_src_feats=0, num_tgt_feats=0,
                  src_seq_length=0, tgt_seq_length=0,
                  dynamic_dict=True, use_filter_pred=True):
@@ -52,17 +52,17 @@ class TextDataset(ONMTDatasetBase):
         # at minimum the src tokens and their indices and potentially also
         # the src and tgt features and alignment information.
         if tgt_examples_iter is not None :
-            if tgt_m_iter is not None and tgt_m_p_iter is not None:
-                examples_iter = (self._join_dicts(src, tgt, tgt_m, tgt_m_p) for src, tgt, tgt_m, tgt_m_p in
-                             zip(src_examples_iter, tgt_examples_iter, tgt_m_iter, tgt_m_p_iter))
+            if src_m_iter is not None and tgt_m_iter is not None and tgt_m_p_iter is not None:
+                examples_iter = (self._join_dicts(src, tgt, src_m, tgt_m, tgt_m_p) for src, tgt, src_m, tgt_m, tgt_m_p in
+                             zip(src_examples_iter, tgt_examples_iter, src_m_iter, tgt_m_iter, tgt_m_p_iter))
             else :
                 examples_iter = (self._join_dicts(src, tgt) for
                                  src, tgt in
                                  zip(src_examples_iter, tgt_examples_iter))
         else:
-            if tgt_m_iter is not None and tgt_m_p_iter is not None:
-                examples_iter = (self._join_dicts(src, tgt_m, tgt_m_p) for src, tgt_m, tgt_m_p in
-                             zip(src_examples_iter, tgt_m_iter, tgt_m_p_iter))
+            if src_m_iter is not None and tgt_m_iter is not None and tgt_m_p_iter is not None:
+                examples_iter = (self._join_dicts(src, src_m, tgt_m, tgt_m_p) for src, src_m, tgt_m, tgt_m_p in
+                             zip(src_examples_iter, src_m_iter, tgt_m_iter, tgt_m_p_iter))
             else:
                 examples_iter = src_examples_iter
 
@@ -210,6 +210,8 @@ class TextDataset(ONMTDatasetBase):
         fields = {}
 
         fields["tgt_m"] = Field(
+            pad_token=PAD_WORD)
+        fields["src_m"] = Field(
             pad_token=PAD_WORD)
         fields["tgt_m_p"] = Field(
             use_vocab=False, tensor_type=torch.FloatTensor)
@@ -477,7 +479,7 @@ class Field(torchtext.data.Field):
         if self.use_vocab:
             pad_token = self.pad_token
         else:
-            pad_token = 0.0
+            pad_token = 0
         minibatch = list(minibatch)
         if not self.sequential:
             return minibatch

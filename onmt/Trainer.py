@@ -222,15 +222,16 @@ class Trainer(object):
 
             tgt = onmt.io.make_features(batch, 'tgt')
 
+            src_m = onmt.io.make_features(batch, 'src_m')
             tgt_m = onmt.io.make_features(batch, 'tgt_m')
             tgt_m_p = onmt.io.make_features(batch, 'tgt_m_p')
 
             # F-prop through the model.
-            outputs, attns, _ = self.model(src, tgt, tgt_m, tgt_m_p, src_lengths)
+            outputs, attns, _ = self.model(src, tgt, src_m, tgt_m, tgt_m_p, src_lengths)
 
             # Compute loss.
             batch_stats = self.valid_loss.monolithic_compute_loss(
-                    batch, outputs, attns, tgt_m, base=False)
+                    batch, outputs, attns)
 
             # Update statistics.
             stats.update(batch_stats)
@@ -298,6 +299,7 @@ class Trainer(object):
                 src_lengths = None
 
             tgt_outer = onmt.io.make_features(batch, 'tgt')
+            src_m = onmt.io.make_features(batch, 'src_m')
             tgt_m = onmt.io.make_features(batch, 'tgt_m')
             tgt_m_p = onmt.io.make_features(batch, 'tgt_m_p')
 
@@ -309,12 +311,12 @@ class Trainer(object):
                 if self.grad_accum_count == 1:
                     self.model.zero_grad()
                 outputs, attns, dec_state = \
-                    self.model(src, tgt, tgt_m, tgt_m_p, src_lengths, dec_state)
+                    self.model(src, tgt, src_m, tgt_m, tgt_m_p, src_lengths, dec_state)
 
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
-                        batch, outputs, attns, tgt_m, j,
-                        trunc_size, self.shard_size, normalization, base=False)
+                        batch, outputs, attns, j,
+                        trunc_size, self.shard_size, normalization)
 
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:

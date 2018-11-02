@@ -132,6 +132,8 @@ def preprocess_opts(parser):
     group.add_argument('-train_tgt', required=True,
                        help="Path to the training target data")
 
+    group.add_argument('-train_src_m', required=True,
+                       help="Path to the training src_m data")
     group.add_argument('-train_trg_m', required=True,
                        help="Path to the training tgt_m data")
     group.add_argument('-train_trg_m_p', required=True,
@@ -142,6 +144,8 @@ def preprocess_opts(parser):
     group.add_argument('-valid_tgt', required=True,
                        help="Path to the validation target data")
 
+    group.add_argument('-valid_src_m', required=True,
+                       help="Path to the validation src_m data")
     group.add_argument('-valid_trg_m', required=True,
                        help="Path to the validation tgt_m data")
     group.add_argument('-valid_trg_m_p', required=True,
