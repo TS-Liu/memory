@@ -207,14 +207,13 @@ class NMTLossCompute(LossComputeBase):
 
         _, _, dim = B.size()
         tgt_m_p = tgt_m_p[:,:,0]
-        tgt_m_pad_mask = Variable(tgt_m_p.data.ne(1).float())
+
         tgt_m_unk_mask = Variable(tgt_m_p.data.eq(0).float())
-        tgt_m_mask = tgt_m_pad_mask - tgt_m_unk_mask
 
         un_tgt_m_unk_mask = Variable(tgt_m_p.data.ne(0).float())
         abs_mask = un_tgt_m_unk_mask - tgt_m_unk_mask
 
-        G_loss = torch.masked_select((tgt_m_p - B.sum(dim=2)/dim)*abs_mask, tgt_m_mask.byte())
+        G_loss = torch.masked_select((tgt_m_p - B.sum(dim=2)/dim)*abs_mask, un_tgt_m_unk_mask.byte())
         G_loss = torch.sum(-torch.log(G_loss))
 
         loss = loss+G_loss
