@@ -312,7 +312,7 @@ class TransformerDecoder(nn.Module):
             self._copy = True
         self.layer_norm = layers.LayerNorm(hidden_size)
 
-    def forward(self, tgt, src_m, tgt_m, tgt_m_p, memory_bank, emb_src, state, train=False,
+    def forward(self, tgt, src_m, tgt_m, memory_bank, state, train=False,
                 memory_lengths=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
@@ -328,6 +328,8 @@ class TransformerDecoder(nn.Module):
         # if base:
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
+        src_m_words = src_m[:, :, 0].transpose(0, 1)
+        tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
 
         # else:
         #     tgt_m_words = tgt_m.transpose(0, 2).contiguous().view(src_batch, src_len, 2, 1).transpose(2, 3)
@@ -363,16 +365,22 @@ class TransformerDecoder(nn.Module):
         output = emb.transpose(0, 1).contiguous()
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
         if train:
-            tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch, src_len, 1).transpose(0, 1)
             outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*2, tgt_embedding_dim)
             outputs_m = embs_m.transpose(0, 1).contiguous().view(src_batch, src_len*7, tgt_embedding_dim)
 
         else:
-            tgt_m_p = tgt_m_p.transpose(0, 1).contiguous().view(src_batch/5, src_len * 2, 1).unsqueeze(0).repeat(5, 1, 1, 1).view(src_batch, src_len*2, 1).transpose(0, 1)
             outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch/5, src_len*2, tgt_embedding_dim).unsqueeze(0).repeat(5, 1, 1, 1, 1).view(src_batch, src_len*2, tgt_embedding_dim)
 
         padding_idx = self.embeddings.word_padding_idx
+
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
+
+        src_m_pad_mask = Variable(src_m_words.data.eq(padding_idx).float()).view(src_batch, src_len, 7).view(src_batch*src_len, 7)
+
+        tgt_m_pad_mask = Variable(tgt_m_words.data.eq(padding_idx).float())
+
+        sc_bias = torch.unsqueeze(src_m_pad_mask * -1e9, 1)
+        s_bias = torch.unsqueeze(tgt_m_pad_mask * -1e9, 1)
 
         tgt_pad_mask = Variable(tgt_words.data.eq(padding_idx).float().unsqueeze(1))
         tgt_pad_mask = tgt_pad_mask.repeat(1, tgt_len, 1)
@@ -392,7 +400,7 @@ class TransformerDecoder(nn.Module):
                                       previous_input=prev_layer_input)
             saved_inputs.append(all_input)
 
-        output, attn, B = self.memory(output, outputs_m, outputt_m, src_memory_bank)
+        output, attn, B = self.memory(output, outputs_m, outputt_m, src_memory_bank, sc_bias, s_bias)
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
