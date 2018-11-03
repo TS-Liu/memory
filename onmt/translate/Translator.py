@@ -116,7 +116,6 @@ class Translator(object):
 
         src_m = onmt.io.make_features(batch, 'src_m', data_type)
         tgt_m = onmt.io.make_features(batch, 'tgt_m', data_type)
-        tgt_m_p = onmt.io.make_features(batch, 'tgt_m_p', data_type)
 
         if data_type == 'text':
             _, src_lengths = batch.src
@@ -161,7 +160,7 @@ class Translator(object):
 
             # Run one step.
             dec_out, dec_states, attn, B = self.model.decoder(
-                inp, src_m, tgt_m, tgt_m_p, memory_bank, dec_states,
+                inp, src_m, tgt_m, memory_bank, dec_states,
                 memory_lengths=memory_lengths)
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size

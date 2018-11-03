@@ -73,7 +73,7 @@ def main():
 
     # Test data
     data = onmt.io.build_dataset(fields, opt.data_type,
-                                 opt.src, opt.tgt, opt.src_m, opt.tgt_m, opt.tgt_m_p,
+                                 opt.src, opt.tgt, opt.src_m, opt.tgt_m,
                                  src_dir=opt.src_dir,
                                  sample_rate=opt.sample_rate,
                                  window_size=opt.window_size,
