@@ -418,18 +418,20 @@ class TransformerDecoder(nn.Module):
         state = state.update_state(tgt, saved_inputs)
         return outputs, state, attns, B
 
-    def init_decoder_state(self, src, memory_bank, enc_hidden):
-        return TransformerDecoderState(src)
+    def init_decoder_state(self, src, src_m, tgt_m):
+        return TransformerDecoderState(src, src_m, tgt_m)
 
 
 class TransformerDecoderState(DecoderState):
-    def __init__(self, src):
+    def __init__(self, src, src_m, tgt_m):
         """
         Args:
             src (FloatTensor): a sequence of source words tensors
                     with optional feature tensors, of size (len x batch).
         """
         self.src = src
+        self.src_m = src_m
+        self.tgt_m = tgt_m
         self.previous_input = None
         self.previous_layer_inputs = None
 
@@ -442,7 +444,7 @@ class TransformerDecoderState(DecoderState):
 
     def update_state(self, input, previous_layer_inputs):
         """ Called for every decoder forward pass. """
-        state = TransformerDecoderState(self.src)
+        state = TransformerDecoderState(self.src, self.src_m, self.tgt_m)
         state.previous_input = input
         state.previous_layer_inputs = previous_layer_inputs
         return state
@@ -451,3 +453,7 @@ class TransformerDecoderState(DecoderState):
         """ Repeat beam_size times along batch dimension. """
         self.src = Variable(self.src.data.repeat(1, beam_size, 1),
                             volatile=True)
+        self.src_m = Variable(self.src_m.data.repeat(1, beam_size, 1),
+                            volatile=True)
+        self.tgt_m = Variable(self.tgt_m.data.repeat(1, beam_size, 1),
+                              volatile=True)

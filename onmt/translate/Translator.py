@@ -228,7 +228,7 @@ class Translator(object):
         #  (1) run the encoder on the src
         enc_states, memory_bank = self.model.encoder(src, src_lengths)
         dec_states = \
-            self.model.decoder.init_decoder_state(src, memory_bank, enc_states)
+            self.model.decoder.init_decoder_state(src, src_m, tgt_m)
 
         #  (2) if a target is specified, compute the 'goldScore'
         #  (i.e. log likelihood) of the target under the model
