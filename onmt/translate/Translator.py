@@ -114,6 +114,7 @@ class Translator(object):
         src = onmt.io.make_features(batch, 'src', data_type)
         src_lengths = None
 
+        src_m = onmt.io.make_features(batch, 'src_m', data_type)
         tgt_m = onmt.io.make_features(batch, 'tgt_m', data_type)
         tgt_m_p = onmt.io.make_features(batch, 'tgt_m_p', data_type)
 
@@ -159,8 +160,8 @@ class Translator(object):
             inp = inp.unsqueeze(2)
 
             # Run one step.
-            dec_out, dec_states, attn = self.model.decoder(
-                inp, tgt_m, tgt_m_p, memory_bank, src_emb, dec_states, base=False,
+            dec_out, dec_states, attn, B = self.model.decoder(
+                inp, src_m, tgt_m, tgt_m_p, memory_bank, dec_states,
                 memory_lengths=memory_lengths)
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
@@ -171,23 +172,6 @@ class Translator(object):
                 out = unbottle(out)
                 # beam x tgt_vocab
                 beam_attn = unbottle(attn["std"])
-
-                mf_beam_attn = beam_attn.data
-                src_len, src_batch, _ = tgt_m.size()
-                tgt_mss = tgt_m.view(src_len, src_batch).transpose(0, 1).unsqueeze(0).repeat(5, 1, 1)
-                B = 0.155
-                i = 0
-                for tgt_ms in tgt_mss:
-                    j = 0
-                    for indexs in tgt_ms:
-                        in_indexs = []
-                        for index in indexs:
-                            if int(index) not in in_indexs and int(index) != 1:
-                                in_indexs.append(int(index))
-                                mask = indexs.eq(index).data.float()
-                                out[i][j][int(index)] = B * math.log((mf_beam_attn[i][j] * mask).sum()) + (1 - B) * out[i][j][int(index)]
-                        j += 1
-                    i += 1
             else:
                 out = self.model.generator.forward(dec_out,
                                                    attn["copy"].squeeze(0),
@@ -237,6 +221,7 @@ class Translator(object):
         else:
             src_lengths = None
         src = onmt.io.make_features(batch, 'src', data_type)
+        src_m = onmt.io.make_features(batch, 'src_m', data_type)
         tgt_m = onmt.io.make_features(batch, 'tgt_m', data_type)
         tgt_m_p = onmt.io.make_features(batch, 'tgt_m_p', data_type)
         tgt_in = onmt.io.make_features(batch, 'tgt')[:-1]
@@ -251,7 +236,7 @@ class Translator(object):
         tt = torch.cuda if self.cuda else torch
         gold_scores = tt.FloatTensor(batch.batch_size).fill_(0)
         dec_out, _, _ = self.model.decoder(
-            tgt_in, tgt_m, tgt_m_p, memory_bank, dec_states, memory_lengths=src_lengths, base=False)
+            tgt_in, src_m, tgt_m, tgt_m_p, memory_bank, dec_states, memory_lengths=src_lengths)
 
         tgt_pad = self.fields["tgt"].vocab.stoi[onmt.io.PAD_WORD]
         for dec, tgt in zip(dec_out, batch.tgt[1:].data):

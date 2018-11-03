@@ -175,7 +175,7 @@ def collect_feature_vocabs(fields, side):
     return feature_vocabs
 
 
-def build_dataset(fields, data_type, src_path, tgt_path, tgt_m_path, tgt_m_p_path,src_dir=None,
+def build_dataset(fields, data_type, src_path, tgt_path, src_m_path, tgt_m_path, tgt_m_p_path,src_dir=None,
                   src_seq_length=0, tgt_seq_length=0,
                   src_seq_length_trunc=0, tgt_seq_length_trunc=0,
                   dynamic_dict=True, sample_rate=0,
@@ -195,6 +195,9 @@ def build_dataset(fields, data_type, src_path, tgt_path, tgt_m_path, tgt_m_p_pat
         TextDataset.make_text_examples_nfeats_tpl(
             tgt_path, tgt_seq_length_trunc, "tgt")
 
+    src_m_examples_iter, num_src_m_feats = \
+        TextDataset.make_text_examples_nfeats_tpl(
+            src_m_path, src_seq_length_trunc, "src_m")
     tgt_m_examples_iter, num_tgt_m_feats = \
         TextDataset.make_text_examples_nfeats_tpl(
             tgt_m_path, tgt_seq_length_trunc, "tgt_m")
@@ -205,7 +208,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, tgt_m_path, tgt_m_p_pat
 
     if data_type == 'text':
         dataset = TextDataset(fields, src_examples_iter, tgt_examples_iter,
-                              tgt_m_examples_iter, tgt_m_p_examples_iter,
+                              src_m_examples_iter, tgt_m_examples_iter, tgt_m_p_examples_iter,
                               num_src_feats, num_tgt_feats,
                               src_seq_length=src_seq_length,
                               tgt_seq_length=tgt_seq_length,

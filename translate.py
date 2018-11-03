@@ -55,42 +55,6 @@ def _report_rouge():
         shell=True).decode("utf-8")
     print(res.strip())
 
-def func(i,N,M,src_lines, trg_lines, align_lines):
-    print("start"+str(i))
-    align = OrderedDict()
-    for lines, linet, linea in zip(src_lines, trg_lines, align_lines):
-        words_src = lines.strip().split()
-        words_trg = linet.strip().split()
-        a_s_t = linea.strip().split()
-        for a in a_s_t :
-            a = a.split('-')
-            t_num = int(a[1])
-            s_num = int(a[0])
-            t = words_trg[t_num]
-            s = words_src[s_num]
-            t_n_gram=['<s>']*(N)
-            s_context=['']*(M*2+1)
-            if t_num < N :
-                t_n_gram[N-t_num:] = words_trg[0:t_num]
-            else :
-                t_n_gram = words_trg[t_num-N:t_num]
-            if s_num < M and s_num+M+1 <= len(words_src):
-                s_context[M*2-s_num-M:] = words_src[0:s_num+M+1]
-                s_context[:M*2-s_num-M] = ['<s>']*(M*2-s_num-M)
-            elif s_num-M >= 0 and s_num > len(words_src)-M-1 :
-                s_context[0:len(words_src)-s_num+M] = words_src[s_num-M:len(words_src)]
-                s_context[len(words_src)-s_num+M:] = ['</s>']*(M*2+1-len(words_src)+s_num-M)
-            elif s_num-M >= 0 and s_num+M+1 <= len(words_src) :
-                s_context = words_src[s_num-M:s_num+M+1]
-            else :
-                s_context[M*2-s_num-M:len(words_src)-s_num+M] = words_src
-                s_context[len(words_src)-s_num+M:] = ['</s>']*(M*2+1-len(words_src)+s_num-M)
-                s_context[:M*2-s_num-M] = ['<s>']*(M*2-s_num-M)
-            if str([t,s,t_n_gram,s_context]) not in align.keys() :
-                align[str([t,s,t_n_gram,s_context])] = 0
-            align[str([t,s,t_n_gram,s_context])]+=1
-    print("end"+str(i))
-    return align
 def main():
     dummy_parser = argparse.ArgumentParser(description='train.py')
     opts.model_opts(dummy_parser)
@@ -109,7 +73,7 @@ def main():
 
     # Test data
     data = onmt.io.build_dataset(fields, opt.data_type,
-                                 opt.src, opt.tgt, opt.tgt_m, opt.tgt_m_p,
+                                 opt.src, opt.tgt, opt.src_m, opt.tgt_m, opt.tgt_m_p,
                                  src_dir=opt.src_dir,
                                  sample_rate=opt.sample_rate,
                                  window_size=opt.window_size,
