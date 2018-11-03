@@ -65,7 +65,7 @@ class TextDataset(ONMTDatasetBase):
                                  src, tgt in
                                  zip(src_examples_iter, tgt_examples_iter))
         else:
-            if src_m_iter is not None and tgt_m_iter is not None and tgt_m_p_iter is not None:
+            if src_m_iter is not None and tgt_m_iter is not None :
                 if tgt_m_p_iter is not None :
                     examples_iter = (self._join_dicts(src, src_m, tgt_m, tgt_m_p) for src, src_m, tgt_m, tgt_m_p in
                              zip(src_examples_iter, src_m_iter, tgt_m_iter, tgt_m_p_iter))
@@ -158,7 +158,7 @@ class TextDataset(ONMTDatasetBase):
         Returns:
             (example_dict iterator, num_feats) tuple.
         """
-        assert side in ['src', 'tgt', 'tgt_m', 'tgt_m_p']
+        assert side in ['src', 'tgt', 'src_m', 'tgt_m', 'tgt_m_p']
 
         if path is None:
             return (None, 0)
