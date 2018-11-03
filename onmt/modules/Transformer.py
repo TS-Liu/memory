@@ -366,12 +366,9 @@ class TransformerDecoder(nn.Module):
 
         output = emb.transpose(0, 1).contiguous()
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
-        if train:
-            outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*2, tgt_embedding_dim)
-            outputs_m = embs_m.transpose(0, 1).contiguous().view(src_batch, src_len*7, tgt_embedding_dim)
 
-        else:
-            outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch/5, src_len*2, tgt_embedding_dim).unsqueeze(0).repeat(5, 1, 1, 1, 1).view(src_batch, src_len*2, tgt_embedding_dim)
+        outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*2, tgt_embedding_dim)
+        outputs_m = embs_m.transpose(0, 1).contiguous().view(src_batch, src_len*7, tgt_embedding_dim)
 
         padding_idx = self.embeddings.word_padding_idx
 
