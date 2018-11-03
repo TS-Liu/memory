@@ -399,7 +399,7 @@ def translate_opts(parser):
     group.add_argument('-src',   required=True,
                        help="""Source sequence to decode (one line per
                        sequence)""")
-    group.add_argument('-tgt_m_p', required=True,
+    group.add_argument('-src_m', required=True,
                        help="""Source sequence to decode (one line per
                            sequence)""")
     group.add_argument('-tgt_m', required=True,
