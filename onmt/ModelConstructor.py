@@ -76,7 +76,7 @@ def make_encoder(opt, embeddings):
                           opt.bridge)
 
 
-def make_decoder(opt, embeddings):
+def make_decoder(opt, embeddings, src_embeddings):
     """
     Various decoder dispatcher function.
     Args:
@@ -86,7 +86,7 @@ def make_decoder(opt, embeddings):
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
-                                  opt.dropout, embeddings)
+                                  opt.dropout, embeddings, src_embeddings)
     elif opt.decoder_type == "cnn":
         return CNNDecoder(opt.dec_layers, opt.rnn_size,
                           opt.global_attention, opt.copy_attn,
@@ -147,13 +147,13 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         ("Unsupported model type %s" % (model_opt.model_type))
 
     # Make encoder.
-    if model_opt.model_type == "text":
-        src_dict = fields["src"].vocab
-        feature_dicts = onmt.io.collect_feature_vocabs(fields, 'src')
-        src_embeddings = make_embeddings(model_opt, src_dict,
+    #if model_opt.model_type == "text":
+    src_dict = fields["src"].vocab
+    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'src')
+    src_embeddings = make_embeddings(model_opt, src_dict,
                                          feature_dicts)
-        encoder = make_encoder(model_opt, src_embeddings)
-    elif model_opt.model_type == "img":
+    encoder = make_encoder(model_opt, src_embeddings)
+    if model_opt.model_type == "img":
         encoder = ImageEncoder(model_opt.enc_layers,
                                model_opt.brnn,
                                model_opt.rnn_size,
@@ -181,7 +181,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
-    decoder = make_decoder(model_opt, tgt_embeddings)
+    decoder = make_decoder(model_opt, tgt_embeddings, src_embeddings)
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)

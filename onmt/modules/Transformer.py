@@ -185,7 +185,7 @@ class MemoryLayer(EncoderBase):
                                                   hidden_size,
                                                   dropout)
         self.ma_l2 = attention.MultiheadAttention(hidden_size,
-                                                  hidden_size*2,
+                                                  hidden_size,
                                                   hidden_size,
                                                   dropout)
 
@@ -203,25 +203,32 @@ class MemoryLayer(EncoderBase):
 
         self.ffn_postdropout = nn.Dropout(dropout)
 
+        self.w1 = nn.Linear(hidden_size, hidden_size)
+        self.u1 = nn.Linear(hidden_size, hidden_size)
+        self.v1 = nn.Linear(hidden_size, hidden_size)
+
+        self.Tanh = nn.Tanh()
+
         self.w = nn.Linear(hidden_size, hidden_size)
         self.u = nn.Linear(hidden_size, hidden_size)
         self.s = nn.Sigmoid()
 
-    def forward(self, output, outputs_m, outputt_m, src_memory_bank, sc_bias, s_bias):
+    def forward(self, output, outputs, outputs_m, outputt_m, src_memory_bank, encoder_decoder_bias, sc_bias, s_bias):
         # self multihead attention
         batch, lens, dim = src_memory_bank.size()
 
-        src_memory_bank = src_memory_bank.view(batch*lens, 1, dim)
-        outputs_m = outputs_m.view(batch, lens, 7, dim).view(batch*lens, 7, dim)
-        s_norm_x = self.ma_l1_prenorm(src_memory_bank)
-        s_y, s_ = self.ma_l1(s_norm_x, outputs_m, self.num_heads, sc_bias)
-        s_x = self.ma_l1_postdropout(s_y)+src_memory_bank
-        s_x = s_x.view(batch, lens, dim)
+        outputs = outputs.view(batch, lens, 1, dim).view(batch * lens, 1, dim)
+        outputs_m = outputs_m.view(batch, lens, 7, dim).view(batch * lens, 7, dim)
+        norm_x = self.ma_l1_prenorm(outputs)
+        y, _ = self.ma_l1(norm_x, outputs_m, self.num_heads, sc_bias)
+        x = self.ma_l1_postdropout(y) + outputs
+        s_x = x.view(batch, lens, dim)
 
-        outputt_m = outputt_m
+        src_memory_bank = src_memory_bank.unsqueeze(2).repeat(1, 1, 2, 1).view(batch, lens * 2, dim)
         s_x = s_x.unsqueeze(2).repeat(1, 1, 2, 1).view(batch, lens*2, dim)
 
-        s_t_m = torch.cat((outputt_m, s_x), dim=2)
+        s_t_m = self.Tanh(self.w1(src_memory_bank)+self.u1(s_x)+self.v1(outputt_m))
+        #s_t_m = torch.cat((outputt_m, s_x), dim=2)
 
         s_t_norm_x = self.ma_l2_prenorm(output)
         s_t_y, s_t_ = self.ma_l2(s_t_norm_x, s_t_m, self.num_heads, s_bias)
@@ -263,7 +270,6 @@ class TransformerEncoder(EncoderBase):
         s_len, n_batch, emb_dim = emb.size()
 
         out = emb.transpose(0, 1).contiguous()
-        emb_src = out
         words = input[:, :, 0].transpose(0, 1)
         # CHECKS
         out_batch, out_len, _ = out.size()
@@ -281,7 +287,7 @@ class TransformerEncoder(EncoderBase):
             out = self.layer_stack[i](out, bias)
         out = self.layer_norm(out)
 
-        return Variable(emb.data), out.transpose(0, 1).contiguous(), emb_src
+        return Variable(emb.data), out.transpose(0, 1).contiguous()
 
 
 class TransformerDecoder(nn.Module):
@@ -290,13 +296,14 @@ class TransformerDecoder(nn.Module):
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, dropout, embeddings):
+                 copy_attn, dropout, embeddings, src_embeddings):
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
         self.decoder_type = 'transformer'
         self.num_layers = num_layers
         self.embeddings = embeddings
+        self.src_embeddings = src_embeddings
 
         self.layer_stack = nn.ModuleList([
             DecoderLayer(hidden_size, dropout) for _ in range(num_layers)])
@@ -357,7 +364,8 @@ class TransformerDecoder(nn.Module):
         emb = self.embeddings(tgt)
         _, __, tgt_embedding_dim = emb.size()
         embt_m = self.embeddings(tgt_m)
-        embs_m = self.embeddings(src_m)
+        embs_m = self.src_embeddings(src_m)
+        embs = self.src_embeddings(src)
 
         if state.previous_input is not None:
             emb = emb[state.previous_input.size(0):, ]
@@ -369,6 +377,7 @@ class TransformerDecoder(nn.Module):
 
         outputt_m = embt_m.transpose(0, 1).contiguous().view(src_batch, src_len*2, tgt_embedding_dim)
         outputs_m = embs_m.transpose(0, 1).contiguous().view(src_batch, src_len*7, tgt_embedding_dim)
+        outputs = embs.transpose(0, 1).contiguous()
 
         padding_idx = self.embeddings.word_padding_idx
 
@@ -399,7 +408,7 @@ class TransformerDecoder(nn.Module):
                                       previous_input=prev_layer_input)
             saved_inputs.append(all_input)
 
-        output, attn, B = self.memory(output, outputs_m, outputt_m, src_memory_bank, sc_bias, s_bias)
+        output, attn, B = self.memory(output, outputs, outputs_m, outputt_m, src_memory_bank, encoder_decoder_bias, sc_bias, s_bias)
 
         saved_inputs = torch.stack(saved_inputs)
         output = self.layer_norm(output)
