@@ -160,7 +160,7 @@ class Translator(object):
 
             # Run one step.
             dec_out, dec_states, attn, B = self.model.decoder(
-                inp, src_m, tgt_m, memory_bank, dec_states,
+                inp, memory_bank, dec_states,
                 memory_lengths=memory_lengths)
             dec_out = dec_out.squeeze(0)
             # dec_out: beam x rnn_size
