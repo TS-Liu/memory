@@ -210,9 +210,9 @@ class NMTLossCompute(LossComputeBase):
         tgt_m_p = tgt_m_p[:, :, 0]
 
         tgt_m = tgt_m[1:, :, 0].transpose(0, 1).unsqueeze(1).repeat(1, tgt_len, 1)
-        tgt = tgt.transpose(0, 1).view(tgt_batch, tgt_len)
+        tgt = tgt.transpose(0, 1).contiguous().view(tgt_batch, tgt_len)
         tgt_m_mask = tgt_m.eq(tgt)
-        A_loss = torch.sum(-torch.log(attn.transpose(0,1) * tgt_m_mask))
+        A_loss = torch.sum(-torch.log(torch.masked_select(attn.transpose(0,1), tgt_m_mask)))
 
         tgt_m_unk_mask = Variable(tgt_m_p.data.eq(0).float())
         un_tgt_m_unk_mask = Variable(tgt_m_p.data.ne(0).float())
