@@ -165,7 +165,7 @@ def collect_feature_vocabs(fields, side):
     """
     Collect feature Vocab objects from Field object.
     """
-    assert side in ['src', 'tgt']
+    assert side in ['src', 'tgt', 'src_m', 'tgt_m']
     feature_vocabs = []
     for j in count():
         key = side + "_feat_" + str(j)
