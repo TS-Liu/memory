@@ -66,7 +66,7 @@ class LossComputeBase(nn.Module):
         return NotImplementedError
 
 
-    def monolithic_compute_loss(self, batch, output, tgt_m_p, attns, B):
+    def monolithic_compute_loss(self, batch, output, tgt_m, tgt_m_p, attns, B):
         """
         Compute the forward loss for the batch.
 
@@ -81,7 +81,7 @@ class LossComputeBase(nn.Module):
             :obj:`onmt.Statistics`: loss statistics
         """
         range_ = (0, batch.tgt.size(0))
-        shard_state = self._make_shard_state(batch, output, range_, tgt_m_p, attns, B)
+        shard_state = self._make_shard_state(batch, output, range_, tgt_m, tgt_m_p, attns, B)
 
         _, batch_stats = self._compute_loss(batch, **shard_state)
 
@@ -209,8 +209,8 @@ class NMTLossCompute(LossComputeBase):
         tgt_len, tgt_batch = tgt.size()
         tgt_m_p = tgt_m_p[:, :, 0]
 
-        tgt_m = tgt_m[1:, :, 0].transpose(0, 1).unsqueeze(1).repeat(1, tgt_len, 1)
-        tgt = tgt.transpose(0, 1).contiguous().view(tgt_batch, tgt_len)
+        tgt_m = tgt_m[:, :, 0].transpose(0, 1).unsqueeze(1).repeat(1, tgt_len, 1)
+        tgt = tgt.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1)
         tgt_m_mask = tgt_m.eq(tgt)
         A_loss = torch.sum(-torch.log(torch.masked_select(attn.transpose(0,1), tgt_m_mask)))
 
