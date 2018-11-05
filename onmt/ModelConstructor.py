@@ -188,13 +188,13 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     src_m_embeddings = make_embeddings(model_opt, src_m_dict,
                                      feature_dicts)
 
-    src_m_embeddings.make_embedding.emb_luts.0.weight = src_embeddings.make_embedding.emb_luts.0.weight
-    tgt_m_embeddings.make_embedding.emb_luts.0.weight = tgt_embeddings.make_embedding.emb_luts.0.weight
-
     tgt_m_dict = fields["tgt_m"].vocab
     feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt_m')
     tgt_m_embeddings = make_embeddings(model_opt, tgt_m_dict,
                                      feature_dicts, for_encoder=False)
+
+    src_m_embeddings.make_embedding.emb_luts = src_embeddings.make_embedding.emb_luts
+    tgt_m_embeddings.make_embedding.emb_luts = tgt_embeddings.make_embedding.emb_luts
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
