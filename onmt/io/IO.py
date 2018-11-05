@@ -274,19 +274,14 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                     val = [val]
                 counter[k].update(val)
 
-    _build_field_vocab(fields["tgt_m"], counter["tgt_m"],
-                       max_size=tgt_vocab_size,
-                       min_freq=tgt_words_min_frequency)
-    print(" * tgt_m vocab size: %d." % len(fields["tgt_m"].vocab))
-    _build_field_vocab(fields["src_m"], counter["src_m"],
-                       max_size=src_vocab_size,
-                       min_freq=src_words_min_frequency)
-    print(" * src_m vocab size: %d." % len(fields["src_m"].vocab))
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
                        max_size=tgt_vocab_size,
                        min_freq=tgt_words_min_frequency)
     print(" * tgt vocab size: %d." % len(fields["tgt"].vocab))
+
+    fields["tgt_m"].vocab = fields["tgt"].vocab
+    print(" * tgt_m vocab size: %d." % len(fields["tgt_m"].vocab))
 
     # All datasets have same num of n_tgt_features,
     # getting the last one is OK.
@@ -300,6 +295,9 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                            max_size=src_vocab_size,
                            min_freq=src_words_min_frequency)
         print(" * src vocab size: %d." % len(fields["src"].vocab))
+
+        fields["src_m"].vocab = fields["src"].vocab
+        print(" * src_m vocab size: %d." % len(fields["src_m"].vocab))
 
         # All datasets have same num of n_src_features,
         # getting the last one is OK.
