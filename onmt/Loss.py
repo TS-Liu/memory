@@ -205,7 +205,7 @@ class NMTLossCompute(LossComputeBase):
         loss = self.criterion(scores, gtruth)
 
         _, _, dim = B.size()
-        tgt = target[:, :, 0]
+        tgt = target
         tgt_len, tgt_batch = tgt.size()
         tgt_m_p = tgt_m_p[:, :, 0]
 

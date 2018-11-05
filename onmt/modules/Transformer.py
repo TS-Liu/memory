@@ -203,11 +203,11 @@ class MemoryLayer(EncoderBase):
 
         self.ffn_postdropout = nn.Dropout(dropout)
 
-        self.w1 = nn.Linear(hidden_size, hidden_size)
-        self.u1 = nn.Linear(hidden_size, hidden_size)
-        self.v1 = nn.Linear(hidden_size, hidden_size)
-
-        self.Tanh = nn.Tanh()
+        # self.w1 = nn.Linear(hidden_size, hidden_size)
+        # self.u1 = nn.Linear(hidden_size, hidden_size)
+        # self.v1 = nn.Linear(hidden_size, hidden_size)
+        #
+        # self.Tanh = nn.Tanh()
 
         self.w = nn.Linear(hidden_size, hidden_size)
         self.u = nn.Linear(hidden_size, hidden_size)
