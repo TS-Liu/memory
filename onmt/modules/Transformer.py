@@ -185,7 +185,7 @@ class MemoryLayer(EncoderBase):
                                                   hidden_size,
                                                   dropout)
         self.ma_l2 = attention.MultiheadAttention(hidden_size,
-                                                  hidden_size,
+                                                  hidden_size*2,
                                                   hidden_size,
                                                   dropout)
 
@@ -224,11 +224,11 @@ class MemoryLayer(EncoderBase):
         x = self.ma_l1_postdropout(y) + outputs
         s_x = x.view(batch, lens, dim)
 
-        src_memory_bank = src_memory_bank.unsqueeze(2).repeat(1, 1, 2, 1).view(batch, lens * 2, dim)
+        #src_memory_bank = src_memory_bank.unsqueeze(2).repeat(1, 1, 2, 1).view(batch, lens * 2, dim)
         s_x = s_x.unsqueeze(2).repeat(1, 1, 2, 1).view(batch, lens*2, dim)
 
-        s_t_m = self.Tanh(self.w1(src_memory_bank)+self.u1(s_x)+self.v1(outputt_m))
-        #s_t_m = torch.cat((outputt_m, s_x), dim=2)
+        #s_t_m = self.Tanh(self.w1(src_memory_bank)+self.u1(s_x)+self.v1(outputt_m))
+        s_t_m = torch.cat((outputt_m, s_x), dim=2)
 
         s_t_norm_x = self.ma_l2_prenorm(output)
         s_t_y, s_t_ = self.ma_l2(s_t_norm_x, s_t_m, self.num_heads, s_bias)
@@ -239,8 +239,6 @@ class MemoryLayer(EncoderBase):
 
         B = self.s(self.w(output) + self.u(output_h))
         ans = (1 - B) * output + B * output_h
-
-
 
 
         return ans, s_t_, B
@@ -334,14 +332,12 @@ class TransformerDecoder(nn.Module):
         src_m = state.src_m
         tgt_m = state.tgt_m
         src_len, src_batch, _ = src.size()
+        tgt_len, tgt_batch, _ = tgt.size()
         # if base:
         src_words = src[:, :, 0].transpose(0, 1)
         tgt_words = tgt[:, :, 0].transpose(0, 1)
         src_m_words = src_m[:, :, 0].transpose(0, 1)
         tgt_m_words = tgt_m[:, :, 0].transpose(0, 1)
-
-        # else:
-        #     tgt_m_words = tgt_m.transpose(0, 2).contiguous().view(src_batch, src_len, 2, 1).transpose(2, 3)
 
 
         src_batch, src_len = src_words.size()
@@ -361,6 +357,8 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = []
 
         # Run the forward pass of the TransformerDecoder.
+
+        ###### EMB ######
         emb = self.embeddings(tgt)
         _, __, tgt_embedding_dim = emb.size()
         embt_m = self.embeddings(tgt_m)
@@ -369,7 +367,6 @@ class TransformerDecoder(nn.Module):
 
         if state.previous_input is not None:
             emb = emb[state.previous_input.size(0):, ]
-            #embt_m = embt_m[state.previous_tm_input.size(0):, ]
         assert emb.dim() == 3  # len x batch x embedding_dim
 
         output = emb.transpose(0, 1).contiguous()
@@ -379,16 +376,11 @@ class TransformerDecoder(nn.Module):
         outputs_m = embs_m.transpose(0, 1).contiguous().view(src_batch, src_len*7, tgt_embedding_dim)
         outputs = embs.transpose(0, 1).contiguous()
 
+        ###### End_EMB ######
+
+        ###### Pad ######
         padding_idx = self.embeddings.word_padding_idx
-
         src_pad_mask = Variable(src_words.data.eq(padding_idx).float())
-
-        src_m_pad_mask = Variable(src_m_words.data.eq(padding_idx).float()).view(src_batch, src_len, 7).view(src_batch*src_len, 7)
-
-        tgt_m_pad_mask = Variable(tgt_m_words.data.eq(padding_idx).float())
-
-        sc_bias = torch.unsqueeze(src_m_pad_mask * -1e9, 1)
-        s_bias = torch.unsqueeze(tgt_m_pad_mask * -1e9, 1)
 
         tgt_pad_mask = Variable(tgt_words.data.eq(padding_idx).float().unsqueeze(1))
         tgt_pad_mask = tgt_pad_mask.repeat(1, tgt_len, 1)
@@ -396,6 +388,14 @@ class TransformerDecoder(nn.Module):
         decoder_local_mask = attention.get_local_mask(tgt_len)  # [1, length, length]
         decoder_local_mask = decoder_local_mask.repeat(tgt_batch, 1, 1)
         decoder_bias = torch.gt(tgt_pad_mask + decoder_local_mask, 0).float() * -1e9
+
+        src_m_pad_mask = Variable(src_m_words.data.eq(padding_idx).float()).view(src_batch, src_len, 7).view(src_batch*src_len, 7)
+        tgt_m_pad_mask = Variable(tgt_m_words.data.eq(padding_idx).float())
+        sc_bias = torch.unsqueeze(src_m_pad_mask * -1e9, 1)
+        s_bias = torch.unsqueeze(tgt_m_pad_mask * -1e9, 1)
+
+        ###### End_Pad ######
+
 
         saved_inputs = []
 

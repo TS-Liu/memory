@@ -38,7 +38,7 @@ class LossComputeBase(nn.Module):
         self.tgt_vocab = tgt_vocab
         self.padding_idx = tgt_vocab.stoi[onmt.io.PAD_WORD]
 
-    def _make_shard_state(self, batch, output, range_, tgt_m_p, attns=None, B=None):
+    def _make_shard_state(self, batch, output, range_, tgt_m, tgt_m_p, attns=None, B=None):
         """
         Make shard state dictionary for shards() to return iterable
         shards for efficient loss computation. Subclass must define
@@ -87,7 +87,7 @@ class LossComputeBase(nn.Module):
 
         return batch_stats
 
-    def sharded_compute_loss(self, batch, output, tgt_m_p, attns, B,
+    def sharded_compute_loss(self, batch, output, tgt_m, tgt_m_p, attns, B,
                              cur_trunc, trunc_size, shard_size,
                              normalization):
         """Compute the forward loss and backpropagate.  Computation is done
@@ -119,13 +119,10 @@ class LossComputeBase(nn.Module):
         """
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
-        shard_state = self._make_shard_state(batch, output, range_, tgt_m_p, attns=attns, B=B)
-
-        tgt_len, _, _ = output.size()
+        shard_state = self._make_shard_state(batch, output, range_, tgt_m, tgt_m_p, attns=attns, B=B)
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
-
             loss.div(normalization).backward()
             batch_stats.update(stats)
 
@@ -181,15 +178,17 @@ class NMTLossCompute(LossComputeBase):
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.confidence = 1.0 - label_smoothing
 
-    def _make_shard_state(self, batch, output, range_, tgt_m_p, attns=None, B=None):
+    def _make_shard_state(self, batch, output, range_, tgt_m, tgt_m_p, attns=None, B=None):
         return {
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
+            "tgt_m": tgt_m,
             "tgt_m_p": tgt_m_p,
+            "attn": attns["std"],
             "B": B,
         }
 
-    def _compute_loss(self, batch, output, target, tgt_m_p, B):
+    def _compute_loss(self, batch, output, target, tgt_m, tgt_m_p, attn, B):
         scores = self.generator(self._bottle(output))
 
         gtruth = target.view(-1)
@@ -206,17 +205,23 @@ class NMTLossCompute(LossComputeBase):
         loss = self.criterion(scores, gtruth)
 
         _, _, dim = B.size()
-        tgt_m_p = tgt_m_p[:,:,0]
+        tgt = target[:, :, 0]
+        tgt_len, tgt_batch = tgt.size()
+        tgt_m_p = tgt_m_p[:, :, 0]
+
+        tgt_m = tgt_m[1:, :, 0].transpose(0, 1).unsqueeze(1).repeat(1, tgt_len, 1)
+        tgt = tgt.transpose(0, 1).view(tgt_batch, tgt_len)
+        tgt_m_mask = tgt_m.eq(tgt)
+        A_loss = torch.sum(-torch.log(attn.transpose(0,1) * tgt_m_mask))
 
         tgt_m_unk_mask = Variable(tgt_m_p.data.eq(0).float())
-
         un_tgt_m_unk_mask = Variable(tgt_m_p.data.ne(0).float())
         abs_mask = un_tgt_m_unk_mask - tgt_m_unk_mask
 
-        G_loss = torch.masked_select((1-(tgt_m_p - B.sum(dim=2)/dim))*abs_mask, un_tgt_m_unk_mask.byte())
+        G_loss = torch.masked_select(1-((tgt_m_p - B.sum(dim=2)/dim)*abs_mask), un_tgt_m_unk_mask.byte())
         G_loss = torch.sum(-torch.log(G_loss))
 
-        loss = loss+G_loss
+        loss = loss+G_loss+A_loss
 
         loss_data = loss.data.clone()
 
