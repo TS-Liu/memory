@@ -209,11 +209,13 @@ class NMTLossCompute(LossComputeBase):
         tgt_len, tgt_batch = tgt.size()
         tgt_m_p = tgt_m_p[:, :, 0]
 
-        tgt_m = tgt_m.transpose(0, 2)[:, :, 0].transpose(0, 1).unsqueeze(1).repeat(1, tgt_len, 1)
-        tgt = tgt.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1)
-        tgt_m_mask = tgt_m.eq(tgt)
+        tgt_m = tgt_m.transpose(0, 2)[:, :, 0].transpose(0, 1)
         mtgt_m_pad_mask = Variable(tgt_m.data.ne(1).float())
         mtgt_m_unk_mask = Variable(tgt_m.data.eq(0).float())
+
+        tgt_m = tgt_m.unsqueeze(1).repeat(1, tgt_len, 1)
+        tgt = tgt.transpose(0, 1).contiguous().view(tgt_batch, tgt_len, 1)
+        tgt_m_mask = tgt_m.eq(tgt)
 
         tgt_m_unk_mask = Variable(tgt_m_p.data.eq(0).float())
         un_tgt_m_unk_mask = Variable(tgt_m_p.data.ne(0).float())
