@@ -18,7 +18,7 @@ from onmt.Utils import use_gpu
 from torch.nn.init import xavier_uniform
 
 
-def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
+def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True, for_memory=False):
     """
     Make an Embeddings instance.
     Args:
@@ -40,18 +40,30 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     num_feat_embeddings = [len(feat_dict) for feat_dict in
                            feature_dicts]
 
-    return Embeddings(word_vec_size=embedding_dim,
-                      position_encoding=opt.position_encoding,
-                      feat_merge=opt.feat_merge,
-                      feat_vec_exponent=opt.feat_vec_exponent,
-                      feat_vec_size=opt.feat_vec_size,
-                      dropout=opt.dropout,
-                      word_padding_idx=word_padding_idx,
-                      feat_padding_idx=feats_padding_idx,
-                      word_vocab_size=num_word_embeddings,
-                      feat_vocab_sizes=num_feat_embeddings,
-                      sparse=opt.optim == "sparseadam")
-
+    if for_memory:
+        return Embeddings(word_vec_size=embedding_dim,
+                          position_encoding=False,
+                          feat_merge=opt.feat_merge,
+                          feat_vec_exponent=opt.feat_vec_exponent,
+                          feat_vec_size=opt.feat_vec_size,
+                          dropout=opt.dropout,
+                          word_padding_idx=word_padding_idx,
+                          feat_padding_idx=feats_padding_idx,
+                          word_vocab_size=num_word_embeddings,
+                          feat_vocab_sizes=num_feat_embeddings,
+                          sparse=opt.optim == "sparseadam")
+    else:
+        return Embeddings(word_vec_size=embedding_dim,
+                          position_encoding=opt.position_encoding,
+                          feat_merge=opt.feat_merge,
+                          feat_vec_exponent=opt.feat_vec_exponent,
+                          feat_vec_size=opt.feat_vec_size,
+                          dropout=opt.dropout,
+                          word_padding_idx=word_padding_idx,
+                          feat_padding_idx=feats_padding_idx,
+                          word_vocab_size=num_word_embeddings,
+                          feat_vocab_sizes=num_feat_embeddings,
+                          sparse=opt.optim == "sparseadam")
 
 def make_encoder(opt, embeddings):
     """
@@ -76,7 +88,7 @@ def make_encoder(opt, embeddings):
                           opt.bridge)
 
 
-def make_decoder(opt, embeddings, src_embeddings):
+def make_decoder(opt, embeddings, src_embeddings, src_m_embeddings, tgt_m_embeddings):
     """
     Various decoder dispatcher function.
     Args:
@@ -86,7 +98,7 @@ def make_decoder(opt, embeddings, src_embeddings):
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
-                                  opt.dropout, embeddings, src_embeddings)
+                                  opt.dropout, embeddings, src_embeddings, src_m_embeddings, tgt_m_embeddings)
     elif opt.decoder_type == "cnn":
         return CNNDecoder(opt.dec_layers, opt.rnn_size,
                           opt.global_attention, opt.copy_attn,
@@ -171,6 +183,18 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
                                      feature_dicts, for_encoder=False)
+    src_m_dict = fields["src_m"].vocab
+    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'src_m')
+    src_m_embeddings = make_embeddings(model_opt, src_m_dict,
+                                     feature_dicts)
+
+    src_m_embeddings.make_embedding.emb_luts.0.weight = src_embeddings.make_embedding.emb_luts.0.weight
+    tgt_m_embeddings.make_embedding.emb_luts.0.weight = tgt_embeddings.make_embedding.emb_luts.0.weight
+
+    tgt_m_dict = fields["tgt_m"].vocab
+    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt_m')
+    tgt_m_embeddings = make_embeddings(model_opt, tgt_m_dict,
+                                     feature_dicts, for_encoder=False)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -181,7 +205,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
-    decoder = make_decoder(model_opt, tgt_embeddings, src_embeddings)
+    decoder = make_decoder(model_opt, tgt_embeddings, src_embeddings, src_m_embeddings, tgt_m_embeddings)
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
