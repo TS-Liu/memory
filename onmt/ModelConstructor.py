@@ -88,7 +88,7 @@ def make_encoder(opt, embeddings):
                           opt.bridge)
 
 
-def make_decoder(opt, embeddings, src_embeddings, src_m_embeddings, tgt_m_embeddings):
+def make_decoder(opt, embeddings, src_embeddings): #, src_m_embeddings, tgt_m_embeddings
     """
     Various decoder dispatcher function.
     Args:
@@ -98,7 +98,7 @@ def make_decoder(opt, embeddings, src_embeddings, src_m_embeddings, tgt_m_embedd
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
-                                  opt.dropout, embeddings, src_embeddings, src_m_embeddings, tgt_m_embeddings)
+                                  opt.dropout, embeddings, src_embeddings) #, src_m_embeddings, tgt_m_embeddings
     elif opt.decoder_type == "cnn":
         return CNNDecoder(opt.dec_layers, opt.rnn_size,
                           opt.global_attention, opt.copy_attn,
@@ -183,18 +183,18 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt')
     tgt_embeddings = make_embeddings(model_opt, tgt_dict,
                                      feature_dicts, for_encoder=False)
-    src_m_dict = fields["src_m"].vocab
-    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'src_m')
-    src_m_embeddings = make_embeddings(model_opt, src_m_dict,
-                                     feature_dicts)
-
-    tgt_m_dict = fields["tgt_m"].vocab
-    feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt_m')
-    tgt_m_embeddings = make_embeddings(model_opt, tgt_m_dict,
-                                     feature_dicts, for_encoder=False)
-
-    src_m_embeddings.make_embedding.emb_luts = src_embeddings.make_embedding.emb_luts
-    tgt_m_embeddings.make_embedding.emb_luts = tgt_embeddings.make_embedding.emb_luts
+    # src_m_dict = fields["src_m"].vocab
+    # feature_dicts = onmt.io.collect_feature_vocabs(fields, 'src_m')
+    # src_m_embeddings = make_embeddings(model_opt, src_m_dict,
+    #                                  feature_dicts)
+    #
+    # tgt_m_dict = fields["tgt_m"].vocab
+    # feature_dicts = onmt.io.collect_feature_vocabs(fields, 'tgt_m')
+    # tgt_m_embeddings = make_embeddings(model_opt, tgt_m_dict,
+    #                                  feature_dicts, for_encoder=False)
+    #
+    # src_m_embeddings.make_embedding.emb_luts = src_embeddings.make_embedding.emb_luts
+    # tgt_m_embeddings.make_embedding.emb_luts = tgt_embeddings.make_embedding.emb_luts
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -205,7 +205,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
-    decoder = make_decoder(model_opt, tgt_embeddings, src_embeddings, src_m_embeddings, tgt_m_embeddings)
+    decoder = make_decoder(model_opt, tgt_embeddings, src_embeddings) #, src_m_embeddings, tgt_m_embeddings
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
